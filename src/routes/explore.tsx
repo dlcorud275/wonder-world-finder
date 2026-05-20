@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ContentRow, ContentCard } from "@/components/ContentCard";
-import { CONTENT, STAGES, type Stage, type Kind } from "@/lib/content-data";
+import { CONTENT, STAGES, type Stage, type Kind, type Language } from "@/lib/content-data";
+import { LangTabs } from "@/components/LangTabs";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/explore")({
@@ -13,22 +14,19 @@ export const Route = createFileRoute("/explore")({
 function Explore() {
   const [stage, setStage] = useState<Stage | "all">("all");
   const [kind, setKind] = useState<Kind | "all">("all");
+  const [lang, setLang] = useState<Language>("en");
   const [q, setQ] = useState("");
 
   const results = CONTENT.filter((c) => {
     if (stage !== "all" && c.stage !== stage) return false;
     if (kind !== "all" && c.kind !== kind) return false;
+    if ((c.language ?? "ko") !== lang) return false;
     if (q && !`${c.title} ${c.creator} ${c.tags.join(" ")}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
-  const isEn = (c: typeof CONTENT[number]) => c.language === "en";
-  const koBooks = results.filter((c) => c.kind === "book" && !isEn(c));
-  const enBooks = results.filter((c) => c.kind === "book" && isEn(c));
-  const koVideos = results.filter((c) => c.kind === "video" && !isEn(c));
-  const enVideos = results.filter((c) => c.kind === "video" && isEn(c));
-  const books = [...koBooks, ...enBooks];
-  const videos = [...koVideos, ...enVideos];
+  const books = results.filter((c) => c.kind === "book");
+  const videos = results.filter((c) => c.kind === "video");
   const showBooks = kind === "all" || kind === "book";
   const showVideos = kind === "all" || kind === "video";
 
@@ -37,6 +35,7 @@ function Explore() {
       <header className="px-5 pt-8 pb-3">
         <h1 className="text-2xl font-bold">탐색</h1>
         <p className="text-sm text-muted-foreground">단계와 형식으로 골라보세요</p>
+        <div className="mt-3"><LangTabs value={lang} onChange={setLang} /></div>
       </header>
 
       <div className="px-5">
@@ -79,23 +78,8 @@ function Explore() {
                   <h2 className="text-sm font-bold text-foreground">📚 책</h2>
                   <span className="text-xs text-muted-foreground">{books.length}개</span>
                 </div>
-                <div className="px-5">
-                  {koBooks.length > 0 && (
-                    <>
-                      <LangLabel ko />
-                      <div className="space-y-2">
-                        {koBooks.map((c) => <ContentRow key={c.id} item={c} />)}
-                      </div>
-                    </>
-                  )}
-                  {enBooks.length > 0 && (
-                    <>
-                      <LangLabel />
-                      <div className="space-y-2">
-                        {enBooks.map((c) => <ContentRow key={c.id} item={c} />)}
-                      </div>
-                    </>
-                  )}
+                <div className="px-5 space-y-2">
+                  {books.map((c) => <ContentRow key={c.id} item={c} />)}
                 </div>
               </section>
             )}
@@ -106,18 +90,7 @@ function Explore() {
                   <h2 className="text-sm font-bold text-foreground">🎬 영상</h2>
                   <span className="text-xs text-muted-foreground">{videos.length}개</span>
                 </div>
-                {koVideos.length > 0 && (
-                  <>
-                    <div className="px-5"><LangLabel ko /></div>
-                    <VideoCarousel items={koVideos} />
-                  </>
-                )}
-                {enVideos.length > 0 && (
-                  <>
-                    <div className="px-5"><LangLabel /></div>
-                    <VideoCarousel items={enVideos} />
-                  </>
-                )}
+                <VideoCarousel items={videos} />
               </section>
             )}
           </>
@@ -196,20 +169,5 @@ function Chip({
     >
       {children}
     </button>
-  );
-}
-
-function LangLabel({ ko = false }: { ko?: boolean }) {
-  return (
-    <div className="flex items-center gap-2 mt-3 mb-2 first:mt-0">
-      <span
-        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-          ko ? "bg-primary/15 text-primary" : "bg-accent/30 text-accent-foreground"
-        }`}
-      >
-        {ko ? "🇰🇷 한글" : "🇺🇸 English"}
-      </span>
-      <span className="h-px flex-1 bg-border" />
-    </div>
   );
 }
