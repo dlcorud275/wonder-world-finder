@@ -13,8 +13,11 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [stage, setStage] = useState<Stage>("toddler");
   const items = CONTENT.filter((c) => c.stage === stage);
-  const books = items.filter((i) => i.kind === "book");
-  const videos = items.filter((i) => i.kind === "video");
+  const isEn = (i: typeof items[number]) => i.language === "en";
+  const koBooks = items.filter((i) => i.kind === "book" && !isEn(i));
+  const enBooks = items.filter((i) => i.kind === "book" && isEn(i));
+  const koVideos = items.filter((i) => i.kind === "video" && !isEn(i));
+  const enVideos = items.filter((i) => i.kind === "video" && isEn(i));
   const today = items[0];
 
   return (
@@ -89,20 +92,42 @@ function Index() {
 
       <section className="px-5 mt-7">
         <SectionTitle title="추천 책" subtitle={`${STAGES.find((s) => s.id === stage)?.desc}`} />
-        <div className="grid grid-cols-2 gap-3">
-          {books.map((b) => (
-            <ContentCard key={b.id} item={b} />
-          ))}
-        </div>
+        {koBooks.length > 0 && (
+          <>
+            <LangLabel ko />
+            <div className="grid grid-cols-2 gap-3">
+              {koBooks.map((b) => <ContentCard key={b.id} item={b} />)}
+            </div>
+          </>
+        )}
+        {enBooks.length > 0 && (
+          <>
+            <LangLabel />
+            <div className="grid grid-cols-2 gap-3">
+              {enBooks.map((b) => <ContentCard key={b.id} item={b} />)}
+            </div>
+          </>
+        )}
       </section>
 
       <section className="px-5 mt-7">
         <SectionTitle title="추천 영상" subtitle="검증된 교육 채널 위주" />
-        <div className="space-y-2">
-          {videos.map((v) => (
-            <ContentRow key={v.id} item={v} />
-          ))}
-        </div>
+        {koVideos.length > 0 && (
+          <>
+            <LangLabel ko />
+            <div className="space-y-2">
+              {koVideos.map((v) => <ContentRow key={v.id} item={v} />)}
+            </div>
+          </>
+        )}
+        {enVideos.length > 0 && (
+          <>
+            <LangLabel />
+            <div className="space-y-2">
+              {enVideos.map((v) => <ContentRow key={v.id} item={v} />)}
+            </div>
+          </>
+        )}
       </section>
     </AppShell>
   );
@@ -113,6 +138,21 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) 
     <div className="mb-3">
       <h2 className="text-lg font-bold">{title}</h2>
       <p className="text-xs text-muted-foreground">{subtitle}</p>
+    </div>
+  );
+}
+
+function LangLabel({ ko = false }: { ko?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 mt-3 mb-2 first:mt-0">
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+          ko ? "bg-primary/15 text-primary" : "bg-accent/30 text-accent-foreground"
+        }`}
+      >
+        {ko ? "🇰🇷 한글" : "🇺🇸 English"}
+      </span>
+      <span className="h-px flex-1 bg-border" />
     </div>
   );
 }
