@@ -33,20 +33,20 @@ export const recommendFn = createServerFn({ method: "POST" })
     const prompt = `당신은 아동 발달 전문 큐레이터입니다.\n\n대상 단계: ${stageInfo.label} (${stageInfo.ages}) — ${stageInfo.desc}\n부모의 요청: "${data.interests}"\n\n다음 후보 중 가장 적합한 2~4개를 골라 id 배열로 반환하고, 부모에게 따뜻하게 추천 이유를 한국어 2~3문장으로 설명하세요.\n\n후보:\n${catalog}`;
 
     try {
-      const { experimental_output } = await generateText({
+      const { output } = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
         prompt,
-        experimental_output: Output.object({
+        output: Output.object({
           schema: z.object({
             ids: z.array(z.string()).min(1).max(4),
             reason: z.string(),
           }),
         }),
       });
-      const validIds = experimental_output.ids.filter((id) =>
+      const validIds = output.ids.filter((id) =>
         candidates.some((c) => c.id === id),
       );
-      return { ids: validIds, reason: experimental_output.reason };
+      return { ids: validIds, reason: output.reason };
     } catch (e: any) {
       if (e?.statusCode === 429)
         throw new Error("요청이 너무 많아요. 잠시 후 다시 시도해주세요.");
