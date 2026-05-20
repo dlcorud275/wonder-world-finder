@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContentIdRouteImport } from './routes/content.$id'
 
@@ -22,6 +23,11 @@ const ExploreRoute = ExploreRouteImport.update({
 const BookmarksRoute = BookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const ContentIdRoute = ContentIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
   '/bookmarks': typeof BookmarksRoute
   '/explore': typeof ExploreRoute
   '/content/$id': typeof ContentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
   '/bookmarks': typeof BookmarksRoute
   '/explore': typeof ExploreRoute
   '/content/$id': typeof ContentIdRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
   '/bookmarks': typeof BookmarksRoute
   '/explore': typeof ExploreRoute
   '/content/$id': typeof ContentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bookmarks' | '/explore' | '/content/$id'
+  fullPaths: '/' | '/ai' | '/bookmarks' | '/explore' | '/content/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bookmarks' | '/explore' | '/content/$id'
-  id: '__root__' | '/' | '/bookmarks' | '/explore' | '/content/$id'
+  to: '/' | '/ai' | '/bookmarks' | '/explore' | '/content/$id'
+  id: '__root__' | '/' | '/ai' | '/bookmarks' | '/explore' | '/content/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiRoute: typeof AiRoute
   BookmarksRoute: typeof BookmarksRoute
   ExploreRoute: typeof ExploreRoute
   ContentIdRoute: typeof ContentIdRoute
@@ -85,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookmarksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiRoute: AiRoute,
   BookmarksRoute: BookmarksRoute,
   ExploreRoute: ExploreRoute,
   ContentIdRoute: ContentIdRoute,
@@ -111,3 +129,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
