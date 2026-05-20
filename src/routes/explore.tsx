@@ -22,8 +22,13 @@ function Explore() {
     return true;
   });
 
-  const books = results.filter((c) => c.kind === "book");
-  const videos = results.filter((c) => c.kind === "video");
+  const isEn = (c: typeof CONTENT[number]) => c.language === "en";
+  const koBooks = results.filter((c) => c.kind === "book" && !isEn(c));
+  const enBooks = results.filter((c) => c.kind === "book" && isEn(c));
+  const koVideos = results.filter((c) => c.kind === "video" && !isEn(c));
+  const enVideos = results.filter((c) => c.kind === "video" && isEn(c));
+  const books = [...koBooks, ...enBooks];
+  const videos = [...koVideos, ...enVideos];
   const showBooks = kind === "all" || kind === "book";
   const showVideos = kind === "all" || kind === "video";
 
@@ -74,8 +79,23 @@ function Explore() {
                   <h2 className="text-sm font-bold text-foreground">📚 책</h2>
                   <span className="text-xs text-muted-foreground">{books.length}개</span>
                 </div>
-                <div className="px-5 space-y-2">
-                  {books.map((c) => <ContentRow key={c.id} item={c} />)}
+                <div className="px-5">
+                  {koBooks.length > 0 && (
+                    <>
+                      <LangLabel ko />
+                      <div className="space-y-2">
+                        {koBooks.map((c) => <ContentRow key={c.id} item={c} />)}
+                      </div>
+                    </>
+                  )}
+                  {enBooks.length > 0 && (
+                    <>
+                      <LangLabel />
+                      <div className="space-y-2">
+                        {enBooks.map((c) => <ContentRow key={c.id} item={c} />)}
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
             )}
@@ -86,7 +106,18 @@ function Explore() {
                   <h2 className="text-sm font-bold text-foreground">🎬 영상</h2>
                   <span className="text-xs text-muted-foreground">{videos.length}개</span>
                 </div>
-                <VideoCarousel items={videos} />
+                {koVideos.length > 0 && (
+                  <>
+                    <div className="px-5"><LangLabel ko /></div>
+                    <VideoCarousel items={koVideos} />
+                  </>
+                )}
+                {enVideos.length > 0 && (
+                  <>
+                    <div className="px-5"><LangLabel /></div>
+                    <VideoCarousel items={enVideos} />
+                  </>
+                )}
               </section>
             )}
           </>
@@ -165,5 +196,20 @@ function Chip({
     >
       {children}
     </button>
+  );
+}
+
+function LangLabel({ ko = false }: { ko?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 mt-3 mb-2 first:mt-0">
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+          ko ? "bg-primary/15 text-primary" : "bg-accent/30 text-accent-foreground"
+        }`}
+      >
+        {ko ? "🇰🇷 한글" : "🇺🇸 English"}
+      </span>
+      <span className="h-px flex-1 bg-border" />
+    </div>
   );
 }
