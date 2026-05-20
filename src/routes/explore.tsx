@@ -68,16 +68,6 @@ function Explore() {
           <p className="text-center text-sm text-muted-foreground py-12">결과가 없어요</p>
         ) : (
           <>
-            {showVideos && videos.length > 0 && (
-              <section>
-                <div className="px-5 flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold text-foreground">🎬 영상</h2>
-                  <span className="text-xs text-muted-foreground">{videos.length}개</span>
-                </div>
-                <VideoCarousel items={videos} />
-              </section>
-            )}
-
             {showBooks && books.length > 0 && (
               <section>
                 <div className="px-5 flex items-center justify-between mb-3">
@@ -87,6 +77,16 @@ function Explore() {
                 <div className="px-5 space-y-2">
                   {books.map((c) => <ContentRow key={c.id} item={c} />)}
                 </div>
+              </section>
+            )}
+
+            {showVideos && videos.length > 0 && (
+              <section>
+                <div className="px-5 flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold text-foreground">🎬 영상</h2>
+                  <span className="text-xs text-muted-foreground">{videos.length}개</span>
+                </div>
+                <VideoCarousel items={videos} />
               </section>
             )}
           </>
