@@ -10,7 +10,18 @@ export function Thumb({ item, className = "" }: { item: ContentItem; className?:
       className={`relative flex items-center justify-center overflow-hidden ${className}`}
       style={{ background: bg }}
     >
-      <span className="text-5xl drop-shadow-sm">{item.emoji}</span>
+      {item.coverUrl ? (
+        <img
+          src={item.coverUrl}
+          alt={item.title}
+          loading="lazy"
+          className="absolute inset-0 size-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+      ) : null}
+      <span className="relative text-5xl drop-shadow-sm">{item.emoji}</span>
       <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-0.5 text-[10px] font-semibold text-foreground">
         {item.kind === "book" ? <BookOpen className="size-3" /> : <Play className="size-3" />}
         {item.kind === "book" ? "책" : "영상"}
@@ -64,6 +75,11 @@ export function ContentRow({ item }: { item: ContentItem }) {
         <p className="text-[10px] font-semibold text-primary">{item.ages} · {item.kind === "book" ? "책" : "영상"}</p>
         <h3 className="font-semibold text-sm leading-tight mt-0.5 truncate">{item.title}</h3>
         <p className="text-xs text-muted-foreground truncate">{item.creator}</p>
+        {item.mustRead && (
+          <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">
+            ⭐ 추천 필독서
+          </span>
+        )}
       </div>
     </Link>
   );
