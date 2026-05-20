@@ -20,8 +20,9 @@ export function Thumb({ item, className = "" }: { item: ContentItem; className?:
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
         />
-      ) : null}
-      <span className="relative text-5xl drop-shadow-sm">{item.emoji}</span>
+      ) : (
+        <span className="relative text-5xl drop-shadow-sm">{item.emoji}</span>
+      )}
       <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-0.5 text-[10px] font-semibold text-foreground">
         {item.kind === "book" ? <BookOpen className="size-3" /> : <Play className="size-3" />}
         {item.kind === "book" ? "책" : "영상"}
