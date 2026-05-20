@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ContentCard, ContentRow } from "@/components/ContentCard";
-import { CONTENT, STAGES, type Stage } from "@/lib/content-data";
+import { LangTabs } from "@/components/LangTabs";
+import { CONTENT, STAGES, type Stage, type Language } from "@/lib/content-data";
 import { Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -12,12 +13,12 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [stage, setStage] = useState<Stage>("toddler");
-  const items = CONTENT.filter((c) => c.stage === stage);
-  const isEn = (i: typeof items[number]) => i.language === "en";
-  const koBooks = items.filter((i) => i.kind === "book" && !isEn(i));
-  const enBooks = items.filter((i) => i.kind === "book" && isEn(i));
-  const koVideos = items.filter((i) => i.kind === "video" && !isEn(i));
-  const enVideos = items.filter((i) => i.kind === "video" && isEn(i));
+  const [lang, setLang] = useState<Language>("en");
+  const items = CONTENT.filter(
+    (c) => c.stage === stage && (c.language ?? "ko") === lang,
+  );
+  const books = items.filter((i) => i.kind === "book");
+  const videos = items.filter((i) => i.kind === "video");
   const today = items[0];
 
   return (
@@ -26,6 +27,7 @@ function Index() {
         <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
         <h1 className="text-2xl font-bold mt-1">오늘은 어떤 이야기를{"\n"}만나볼까요?</h1>
         <p className="text-sm text-muted-foreground mt-1">아이의 성장 단계에 맞춘 좋은 콘텐츠</p>
+        <div className="mt-3"><LangTabs value={lang} onChange={setLang} /></div>
       </header>
 
       <section className="px-5">
@@ -92,41 +94,23 @@ function Index() {
 
       <section className="px-5 mt-7">
         <SectionTitle title="추천 책" subtitle={`${STAGES.find((s) => s.id === stage)?.desc}`} />
-        {koBooks.length > 0 && (
-          <>
-            <LangLabel ko />
-            <div className="grid grid-cols-2 gap-3">
-              {koBooks.map((b) => <ContentCard key={b.id} item={b} />)}
-            </div>
-          </>
-        )}
-        {enBooks.length > 0 && (
-          <>
-            <LangLabel />
-            <div className="grid grid-cols-2 gap-3">
-              {enBooks.map((b) => <ContentCard key={b.id} item={b} />)}
-            </div>
-          </>
+        {books.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {books.map((b) => <ContentCard key={b.id} item={b} />)}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">표시할 책이 없어요</p>
         )}
       </section>
 
       <section className="px-5 mt-7">
         <SectionTitle title="추천 영상" subtitle="검증된 교육 채널 위주" />
-        {koVideos.length > 0 && (
-          <>
-            <LangLabel ko />
-            <div className="space-y-2">
-              {koVideos.map((v) => <ContentRow key={v.id} item={v} />)}
-            </div>
-          </>
-        )}
-        {enVideos.length > 0 && (
-          <>
-            <LangLabel />
-            <div className="space-y-2">
-              {enVideos.map((v) => <ContentRow key={v.id} item={v} />)}
-            </div>
-          </>
+        {videos.length > 0 ? (
+          <div className="space-y-2">
+            {videos.map((v) => <ContentRow key={v.id} item={v} />)}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">표시할 영상이 없어요</p>
         )}
       </section>
     </AppShell>
@@ -138,21 +122,6 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) 
     <div className="mb-3">
       <h2 className="text-lg font-bold">{title}</h2>
       <p className="text-xs text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}
-
-function LangLabel({ ko = false }: { ko?: boolean }) {
-  return (
-    <div className="flex items-center gap-2 mt-3 mb-2 first:mt-0">
-      <span
-        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-          ko ? "bg-primary/15 text-primary" : "bg-accent/30 text-accent-foreground"
-        }`}
-      >
-        {ko ? "🇰🇷 한글" : "🇺🇸 English"}
-      </span>
-      <span className="h-px flex-1 bg-border" />
     </div>
   );
 }
