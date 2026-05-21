@@ -3,7 +3,15 @@ import { BookOpen, Play, Bookmark, BookmarkCheck } from "lucide-react";
 import type { ContentItem } from "@/lib/content-data";
 import { useBookmarks } from "@/lib/bookmarks";
 
-export function Thumb({ item, className = "" }: { item: ContentItem; className?: string }) {
+export function Thumb({
+  item,
+  className = "",
+  contain = false,
+}: {
+  item: ContentItem;
+  className?: string;
+  contain?: boolean;
+}) {
   const bg = `linear-gradient(135deg, oklch(0.88 0.06 ${item.hue}), oklch(0.78 0.05 ${(item.hue + 40) % 360}))`;
   return (
     <div
@@ -15,7 +23,11 @@ export function Thumb({ item, className = "" }: { item: ContentItem; className?:
           src={item.coverUrl}
           alt={item.title}
           loading="lazy"
-          className="absolute inset-0 size-full object-cover"
+          className={
+            contain
+              ? "relative max-h-full max-w-full object-contain drop-shadow-xl"
+              : "absolute inset-0 size-full object-cover"
+          }
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
