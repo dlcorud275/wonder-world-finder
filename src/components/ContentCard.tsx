@@ -25,7 +25,7 @@ export function Thumb({
           loading="lazy"
           className={
             contain
-              ? "relative max-h-full max-w-full object-contain drop-shadow-xl"
+              ? "relative h-full w-full object-contain drop-shadow-xl"
               : "absolute inset-0 size-full object-cover"
           }
           onError={(e) => {
