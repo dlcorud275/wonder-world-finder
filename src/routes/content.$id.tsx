@@ -31,7 +31,7 @@ function Detail() {
   return (
     <AppShell>
       <div className="relative">
-        <Thumb item={item} contain className="h-72 w-full py-4" />
+        <Thumb item={item} contain className="h-80 w-full px-8 py-6" />
         <button
           onClick={() => navigate({ to: "/" })}
           className="absolute top-4 left-4 size-10 rounded-full bg-background/90 backdrop-blur grid place-items-center"
