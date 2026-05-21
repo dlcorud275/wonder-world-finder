@@ -394,6 +394,46 @@ export const CONTENT: ContentItem[] = [
   { id: "set-ko-shogakukan-sci", kind: "book", title: "[전집] Why? 시리즈 베스트", creator: "예림당", stage: "early", ages: "7–10세", emoji: "❓", hue: 200, summary: "과학·인문·사회 주제를 학습만화로 풀어낸 국민 학습 전집.", why: "호기심 폭발기 아이들이 가장 많이 찾는 학습만화 전집.", tags: ["전집", "학습만화", "과학"] },
   { id: "set-ko-biryongso-friends", kind: "book", title: "[전집] 비룡소 난 책읽기가 좋아", creator: "비룡소", stage: "early", ages: "6–9세", emoji: "📖", hue: 280, summary: "단계별로 구성된 저학년 읽기 독립 챕터북 전집.", why: "한글 떼기 후 독서 습관 형성에 추천되는 단계별 전집.", tags: ["전집", "읽기독립"] },
   { id: "set-ko-heoseo-history", kind: "book", title: "[전집] 용선생의 시끌벅적 한국사", creator: "사회평론", stage: "middle", ages: "9–12세", emoji: "🏯", hue: 30, summary: "용선생과 함께 떠나는 한국사 통사 전집.", why: "초등 한국사 추천 1순위. 흥미와 깊이를 함께 잡은 전집.", tags: ["전집", "역사", "한국사"], mustRead: true },
+
+  // ===== KO · 네이버 블로그/교육 인플루언서 추천 추가 그림책 =====
+  { id: "b-ko-no-david", kind: "book", title: "안 돼, 데이빗!", creator: "데이빗 섀논", stage: "toddler", ages: "3–6세", emoji: "🙅", hue: 0, summary: "장난꾸러기 데이빗의 하루를 따라가는 코믹 그림책.", why: "짧은 문장과 표정 풍부한 그림으로 아이들이 가장 좋아하는 그림책 중 하나.", tags: ["그림책", "유머"], mustRead: true },
+  { id: "b-ko-pigeon-bus", kind: "book", title: "비둘기에게 버스 운전은 맡기지 마세요!", creator: "모 윌렘스", stage: "toddler", ages: "3–6세", emoji: "🚌", hue: 220, summary: "버스를 운전하고 싶은 비둘기와 독자가 직접 대화하는 인터랙티브 그림책.", why: "아이의 반응을 끌어내는 참여형 그림책의 정석.", tags: ["참여형", "유머"], mustRead: true },
+  { id: "b-ko-leon", kind: "book", title: "치과 의사 드소토 선생님", creator: "윌리엄 스타이그", stage: "toddler", ages: "4–7세", emoji: "🦷", hue: 200, summary: "여우 환자를 만난 생쥐 치과의사 드소토 부부의 기지가 빛나는 이야기.", why: "지혜와 유머가 어우러진 칼데콧 명예상 그림책.", tags: ["고전", "지혜"] },
+  { id: "b-ko-i-am-me", kind: "book", title: "치킨 마스크", creator: "우쓰기 미호", stage: "toddler", ages: "4–7세", emoji: "🐔", hue: 30, summary: "자존감 낮은 아이가 자신을 사랑하게 되는 따뜻한 그림책.", why: "자존감과 자기 수용을 다루어 부모 사이에서 입소문 난 책.", tags: ["자존감", "감정"], mustRead: true },
+  { id: "b-ko-color-monster", kind: "book", title: "컬러 몬스터, 감정의 색깔", creator: "아나 예나스", stage: "toddler", ages: "3–6세", emoji: "🎨", hue: 280, summary: "뒤죽박죽 감정을 색깔별로 정리해가는 몬스터의 이야기.", why: "유아 감정 교육의 베스트셀러. 팝업판도 인기.", tags: ["감정", "팝업"], mustRead: true },
+  { id: "b-ko-yumi-grandma", kind: "book", title: "우리 할머니가 정말 좋아요", creator: "글로리아 휴스턴", stage: "toddler", ages: "4–7세", emoji: "👵", hue: 350, summary: "할머니와의 추억을 따뜻하게 그린 그림책.", why: "가족 사랑과 세대 간 유대를 잔잔히 전합니다.", tags: ["가족", "사랑"] },
+  { id: "b-ko-bed-monster", kind: "book", title: "침대 밑에 괴물이 있어요", creator: "마이클 로젠", stage: "toddler", ages: "3–6세", emoji: "🛏️", hue: 240, summary: "잠들기 무서운 아이의 마음을 다정하게 어루만지는 그림책.", why: "두려움 다루기에 효과적인 잠자리 추천 도서.", tags: ["잠자리", "감정"] },
+  { id: "b-ko-school-feel", kind: "book", title: "학교 가기 싫은 선생님", creator: "박보람", stage: "toddler", ages: "5–7세", emoji: "🏫", hue: 60, summary: "학교 가기 싫은 건 아이뿐만이 아니라는 반전 그림책.", why: "입학 전후 아이의 불안을 자연스럽게 풀어줍니다.", tags: ["학교", "감정"] },
+  { id: "b-ko-bus-stop", kind: "book", title: "지각대장 존", creator: "존 버닝햄", stage: "toddler", ages: "4–7세", emoji: "⏰", hue: 30, summary: "지각 사유를 믿어주지 않는 어른과 아이의 상상력 대결.", why: "어른의 권위에 맞서는 아이의 상상력을 응원하는 명작.", tags: ["상상력", "고전"] },
+  { id: "b-ko-ten-friends", kind: "book", title: "열까지 셀 줄 아는 아기염소", creator: "알프 프로이센", stage: "toddler", ages: "3–6세", emoji: "🐐", hue: 130, summary: "수를 셀 줄 알게 된 아기염소의 즐거운 모험.", why: "수 개념과 이야기 즐거움을 함께 잡는 스테디셀러.", tags: ["수학", "동물"] },
+  { id: "b-ko-three-robbers", kind: "book", title: "세 강도", creator: "토미 웅거러", stage: "toddler", ages: "4–7세", emoji: "🎩", hue: 270, summary: "사나운 세 강도가 한 소녀를 만나 변해가는 이야기.", why: "강렬한 색감과 메시지로 오래 사랑받는 그림책.", tags: ["고전", "변화"] },
+
+  // ===== KO · early 추가 추천 =====
+  { id: "b-ko-mt-house", kind: "book", title: "산왕 부루", creator: "이지현", stage: "early", ages: "7–10세", emoji: "🐻", hue: 60, summary: "지리산 호랑이 부루와 인간 아이의 우정을 그린 한국 창작 동화.", why: "한국적 자연관과 생명 존중을 담은 추천 도서.", tags: ["한국창작", "자연"] },
+  { id: "b-ko-comic-history", kind: "book", title: "설민석의 한국사 대모험 1", creator: "설민석", stage: "early", ages: "8–10세", emoji: "📜", hue: 30, summary: "설민석 선생님과 함께 떠나는 한국사 학습만화.", why: "한국사 입문 1순위로 꼽히는 인기 학습만화.", tags: ["학습만화", "역사"], mustRead: true },
+  { id: "b-ko-mathadventure", kind: "book", title: "수학도둑 1", creator: "송도수", stage: "early", ages: "8–10세", emoji: "🧮", hue: 200, summary: "수학 개념을 만화로 풀어내는 인기 학습만화.", why: "수학 흥미 유발 1위. 도서관 대출 베스트.", tags: ["학습만화", "수학"] },
+  { id: "b-ko-zoofamily", kind: "book", title: "동물원에서 생긴 일", creator: "이지유", stage: "early", ages: "7–9세", emoji: "🦒", hue: 110, summary: "동물원 사육사의 시선으로 만나는 동물 이야기.", why: "동물 복지와 생명 교육을 자연스럽게 배웁니다.", tags: ["동물", "환경"] },
+  { id: "b-ko-shittiya", kind: "book", title: "수상한 시리즈: 수상한 학교", creator: "박현숙", stage: "early", ages: "8–10세", emoji: "🔍", hue: 280, summary: "초등생들이 가장 좋아하는 미스터리 챕터북 시리즈.", why: "추리와 학교 일상이 어우러진 베스트셀러.", tags: ["미스터리", "시리즈"], mustRead: true },
+  { id: "b-ko-comic-runner", kind: "book", title: "코믹 메이플스토리 오프라인 RPG 1", creator: "송도수", stage: "early", ages: "8–11세", emoji: "🎮", hue: 220, summary: "게임 메이플스토리를 기반으로 한 인기 학습 만화.", why: "남자아이 베스트셀러. 책읽기 거부감 줄이는 입문서로 자주 추천.", tags: ["학습만화", "판타지"] },
+
+  // ===== KO · middle 추가 추천 =====
+  { id: "b-ko-bird-namu", kind: "book", title: "나무를 심은 사람", creator: "장 지오노", stage: "middle", ages: "10–12세", emoji: "🌳", hue: 130, summary: "수십 년간 묵묵히 나무를 심어 황무지를 숲으로 바꾼 한 사람의 이야기.", why: "환경과 인내, 가치에 대한 깊은 울림을 주는 고전.", tags: ["환경", "고전"] },
+  { id: "b-ko-good-shower", kind: "book", title: "소나기", creator: "황순원", stage: "middle", ages: "11–13세", emoji: "🌦️", hue: 200, summary: "시골 소년과 도시 소녀의 짧고 애틋한 첫사랑.", why: "한국 단편문학의 정수. 정서적 성장을 돕는 필독서.", tags: ["한국문학", "고전"], mustRead: true },
+  { id: "b-ko-anne", kind: "book", title: "빨강머리 앤", creator: "루시 모드 몽고메리", stage: "middle", ages: "9–12세", emoji: "👧", hue: 0, summary: "초록지붕 집에 입양된 앤의 사랑스럽고 씩씩한 성장기.", why: "꿈과 우정, 가족의 의미를 깊이 있게 담은 세계 명작.", tags: ["고전", "성장"], mustRead: true },
+  { id: "b-ko-charlotte-web-ko", kind: "book", title: "샬롯의 거미줄", creator: "E. B. 화이트", stage: "middle", ages: "9–11세", emoji: "🕸️", hue: 280, summary: "거미 샬롯과 돼지 윌버의 잊지 못할 우정.", why: "초등 추천 도서 1순위로 꼽히는 우정 이야기.", tags: ["고전", "우정"], mustRead: true },
+  { id: "b-ko-the-summer", kind: "book", title: "복실이네 가족사진", creator: "노경실", stage: "middle", ages: "9–12세", emoji: "📷", hue: 30, summary: "복실이네 가족의 따뜻한 일상을 그린 한국 창작 동화.", why: "한국 가정의 정서를 잘 담아 학교 추천 도서로 자주 선정.", tags: ["가족", "한국창작"] },
+  { id: "b-ko-deokmin", kind: "book", title: "내 인생의 알파벳", creator: "바버라 오코너", stage: "middle", ages: "10–12세", emoji: "🔤", hue: 50, summary: "이사를 자주 다니는 소녀가 친구와 가족을 찾아가는 이야기.", why: "정서적 성장과 자기 수용을 다룬 외국 동화 추천작.", tags: ["성장", "우정"] },
+
+  // ===== KO · 전집 추가 (블로그/인플루언서 추천) =====
+  { id: "set-ko-purple-friends", kind: "book", title: "[전집] 보라보라 자연관찰", creator: "보라출판사", stage: "toddler", ages: "4–7세", emoji: "🐞", hue: 290, summary: "곤충·식물·계절을 사진 중심으로 담은 유아 자연관찰 전집.", why: "그레이트북스 자연관찰과 함께 자주 비교 추천되는 인기 전집.", tags: ["전집", "자연관찰"] },
+  { id: "set-ko-tongtong", kind: "book", title: "[전집] 통통 그림책", creator: "한솔수북", stage: "infant", ages: "1–4세", emoji: "🧸", hue: 350, summary: "영유아 첫 그림책으로 인기 있는 통통 시리즈 전집.", why: "두꺼운 보드북 + 큰 그림으로 첫 책으로 가장 많이 추천됨.", tags: ["전집", "보드북"], mustRead: true },
+  { id: "set-ko-paper-doll", kind: "book", title: "[전집] 똑똑한 그림책", creator: "웅진주니어", stage: "toddler", ages: "3–6세", emoji: "📘", hue: 200, summary: "생활 습관·인지·언어를 키우는 통합 그림책 전집.", why: "교육 인플루언서 사이 꾸준한 인기 전집.", tags: ["전집", "통합"] },
+  { id: "set-ko-who-series", kind: "book", title: "[전집] Who? 인물 시리즈", creator: "다산어린이", stage: "early", ages: "8–11세", emoji: "👤", hue: 220, summary: "세계 위인을 학습만화로 풀어낸 베스트셀러 인물 전집.", why: "초등 인물 학습만화 1순위. 도서관 대출 베스트.", tags: ["전집", "인물", "학습만화"], mustRead: true },
+  { id: "set-ko-survival", kind: "book", title: "[전집] 살아남기 시리즈", creator: "아이세움", stage: "early", ages: "8–11세", emoji: "🌋", hue: 30, summary: "지진·우주·바이러스 등 위기 상황을 다루는 과학 학습만화.", why: "남녀 초등 모두에게 인기인 과학 학습만화 베스트셀러.", tags: ["전집", "과학", "학습만화"], mustRead: true },
+  { id: "set-ko-baby-bear", kind: "book", title: "[전집] 베이비 올", creator: "한국헤르만헤세", stage: "infant", ages: "0–2세", emoji: "👶", hue: 50, summary: "영아 발달 단계에 맞춘 첫 책 전집.", why: "0세 베이비 첫 책으로 인플루언서 추천 다수.", tags: ["전집", "영아"] },
+  { id: "set-ko-prek-eng", kind: "book", title: "[전집] 잉글리시 에그", creator: "잉글리시에그", stage: "toddler", ages: "4–7세", emoji: "🥚", hue: 60, summary: "엄마표 영어로 가장 많이 거론되는 영어 노출 전집.", why: "노부영과 함께 엄마표 영어 양대 산맥.", tags: ["전집", "영어", "엄마표"] },
+  { id: "set-ko-magic-1000", kind: "book", title: "[전집] 마법천자문 시리즈", creator: "시리얼", stage: "early", ages: "7–10세", emoji: "🐉", hue: 350, summary: "한자를 모험과 함께 익히는 국민 학습만화 시리즈.", why: "초등 한자 학습만화 1순위. 시리즈 누적 1,000만 부 베스트.", tags: ["전집", "학습만화", "한자"], mustRead: true },
+  { id: "set-ko-shinki-history", kind: "book", title: "[전집] 그래서 이런 한국사가 생겼대요", creator: "길벗스쿨", stage: "early", ages: "7–10세", emoji: "🏯", hue: 40, summary: "사건 중심으로 풀어낸 저학년 한국사 입문 전집.", why: "용선생 한국사 이전 단계로 추천되는 저학년용 한국사 전집.", tags: ["전집", "역사", "한국사"] },
 ];
 
 export function libraryLinks(title: string) {
