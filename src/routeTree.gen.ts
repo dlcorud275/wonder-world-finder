@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContentIdRouteImport } from './routes/content.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AiRoute
   '/bookmarks': typeof BookmarksRoute
   '/explore': typeof ExploreRoute
+  '/settings': typeof SettingsRoute
   '/content/$id': typeof ContentIdRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/ai': typeof AiRoute
   '/bookmarks': typeof BookmarksRoute
   '/explore': typeof ExploreRoute
+  '/settings': typeof SettingsRoute
   '/content/$id': typeof ContentIdRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,28 @@ export interface FileRoutesById {
   '/ai': typeof AiRoute
   '/bookmarks': typeof BookmarksRoute
   '/explore': typeof ExploreRoute
+  '/settings': typeof SettingsRoute
   '/content/$id': typeof ContentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ai' | '/bookmarks' | '/explore' | '/content/$id'
+  fullPaths:
+    | '/'
+    | '/ai'
+    | '/bookmarks'
+    | '/explore'
+    | '/settings'
+    | '/content/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ai' | '/bookmarks' | '/explore' | '/content/$id'
-  id: '__root__' | '/' | '/ai' | '/bookmarks' | '/explore' | '/content/$id'
+  to: '/' | '/ai' | '/bookmarks' | '/explore' | '/settings' | '/content/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai'
+    | '/bookmarks'
+    | '/explore'
+    | '/settings'
+    | '/content/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,11 +98,19 @@ export interface RootRouteChildren {
   AiRoute: typeof AiRoute
   BookmarksRoute: typeof BookmarksRoute
   ExploreRoute: typeof ExploreRoute
+  SettingsRoute: typeof SettingsRoute
   ContentIdRoute: typeof ContentIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explore': {
       id: '/explore'
       path: '/explore'
@@ -124,8 +154,19 @@ const rootRouteChildren: RootRouteChildren = {
   AiRoute: AiRoute,
   BookmarksRoute: BookmarksRoute,
   ExploreRoute: ExploreRoute,
+  SettingsRoute: SettingsRoute,
   ContentIdRoute: ContentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
