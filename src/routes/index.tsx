@@ -4,7 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { ContentCard, ContentRow } from "@/components/ContentCard";
 import { LangTabs } from "@/components/LangTabs";
 import { CONTENT, STAGES, type Stage, type Language } from "@/lib/content-data";
-import { Sparkles, RefreshCw } from "lucide-react";
+import { getChildProfile, stageFromBirthYear } from "@/lib/child-profile";
+import { Sparkles, RefreshCw, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
@@ -12,72 +13,39 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [stage, setStage] = useState<Stage>("toddler");
+  const profile = getChildProfile();
+  const stage: Stage = stageFromBirthYear(profile.birthYear);
   const [lang, setLang] = useState<Language>("en");
   const [bookSeed, setBookSeed] = useState(0);
   const items = CONTENT.filter(
     (c) => c.stage === stage && (c.language ?? "ko") === lang,
   );
   const allBooks = items.filter((i) => i.kind === "book");
-  const books = pickRotation(allBooks, 5, bookSeed);
+  const books = pickRotation(allBooks, 10, bookSeed);
   const videos = items.filter((i) => i.kind === "video");
-  const today = items[0];
+  const stageInfo = STAGES.find((s) => s.id === stage);
 
   return (
     <AppShell>
       <header className="px-5 pt-8 pb-4">
-        <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
-        <h1 className="text-2xl font-bold mt-1">오늘은 어떤 이야기를{"\n"}만나볼까요?</h1>
-        <p className="text-sm text-muted-foreground mt-1">아이의 성장 단계에 맞춘 좋은 콘텐츠</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
+            <h1 className="text-2xl font-bold mt-1">오늘은 어떤 이야기를{"\n"}만나볼까요?</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {profile.name} · {stageInfo?.label} ({stageInfo?.ages})
+            </p>
+          </div>
+          <Link
+            to="/settings"
+            aria-label="설정"
+            className="shrink-0 p-2 rounded-full bg-secondary border border-border text-foreground"
+          >
+            <Settings className="size-4" />
+          </Link>
+        </div>
         <div className="mt-3"><LangTabs value={lang} onChange={setLang} /></div>
       </header>
-
-      <section className="px-5">
-        <div className="grid grid-cols-4 gap-2">
-          {STAGES.map((s) => {
-            const active = s.id === stage;
-            return (
-              <button
-                key={s.id}
-                onClick={() => setStage(s.id)}
-                className={`rounded-2xl p-3 text-center border transition-all ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-md"
-                    : "bg-card border-border text-foreground"
-                }`}
-              >
-                <div className="text-xl">{s.emoji}</div>
-                <div className="text-[11px] font-semibold mt-1">{s.label}</div>
-                <div className={`text-[10px] ${active ? "opacity-80" : "text-muted-foreground"}`}>{s.ages}</div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {today && (
-        <section className="px-5 mt-6">
-          <Link
-            to="/content/$id"
-            params={{ id: today.id }}
-            className="block relative overflow-hidden rounded-3xl border border-border bg-card"
-          >
-            <div
-              className="h-44 w-full flex items-end p-5"
-              style={{
-                background: `linear-gradient(135deg, oklch(0.82 0.08 ${today.hue}), oklch(0.68 0.07 ${(today.hue + 50) % 360}))`,
-              }}
-            >
-              <div className="text-white drop-shadow">
-                <p className="text-[10px] font-bold tracking-widest uppercase opacity-90">오늘의 추천</p>
-                <h2 className="text-xl font-bold mt-1">{today.title}</h2>
-                <p className="text-xs opacity-90">{today.creator}</p>
-              </div>
-              <span className="absolute top-4 right-4 text-6xl">{today.emoji}</span>
-            </div>
-          </Link>
-        </section>
-      )}
 
       <section className="px-5 mt-6">
         <Link
@@ -99,11 +67,11 @@ function Index() {
           <div>
             <h2 className="text-lg font-bold">추천 책</h2>
             <p className="text-xs text-muted-foreground">
-              {STAGES.find((s) => s.id === stage)?.desc}
-              {allBooks.length > 0 && ` · ${Math.min(5, allBooks.length)}/${allBooks.length}`}
+              {stageInfo?.desc}
+              {allBooks.length > 0 && ` · ${Math.min(10, allBooks.length)}/${allBooks.length}`}
             </p>
           </div>
-          {allBooks.length > 5 && (
+          {allBooks.length > 10 && (
             <button
               onClick={() => setBookSeed((s) => s + 1)}
               className="inline-flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5 text-xs font-semibold text-foreground active:scale-95 transition-transform"
