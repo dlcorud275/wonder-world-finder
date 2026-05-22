@@ -5,7 +5,7 @@ import { ContentCard, ContentRow } from "@/components/ContentCard";
 import { LangTabs } from "@/components/LangTabs";
 import { CONTENT, STAGES, type Stage, type Language } from "@/lib/content-data";
 import { getChildProfile, stageFromBirthYear } from "@/lib/child-profile";
-import { Sparkles, RefreshCw } from "lucide-react";
+import { Sparkles, RefreshCw, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
@@ -28,11 +28,22 @@ function Index() {
   return (
     <AppShell>
       <header className="px-5 pt-8 pb-4">
-        <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
-        <h1 className="text-2xl font-bold mt-1">오늘은 어떤 이야기를{"\n"}만나볼까요?</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {profile.name} · {stageInfo?.label} ({stageInfo?.ages})
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
+            <h1 className="text-2xl font-bold mt-1">오늘은 어떤 이야기를{"\n"}만나볼까요?</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {profile.name} · {stageInfo?.label} ({stageInfo?.ages})
+            </p>
+          </div>
+          <Link
+            to="/settings"
+            aria-label="설정"
+            className="shrink-0 p-2 rounded-full bg-secondary border border-border text-foreground"
+          >
+            <Settings className="size-4" />
+          </Link>
+        </div>
         <div className="mt-3"><LangTabs value={lang} onChange={setLang} /></div>
       </header>
 
