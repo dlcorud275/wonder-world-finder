@@ -1,8 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
 import { Thumb } from "@/components/ContentCard";
 import { CONTENT, shopLinks } from "@/lib/content-data";
 import { nearestLibraries, infoNaruSearchUrl, type SeoulLibrary } from "@/lib/seoul-libraries";
+import { searchNaverBooks } from "@/lib/naver-books.functions";
 import { useBookmarks } from "@/lib/bookmarks";
 import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Play, MapPin, ShoppingBag } from "lucide-react";
 import { useState } from "react";
@@ -80,10 +83,78 @@ function Detail() {
         )}
 
         {item.kind === "book" && (
-          <BookFindSection title={item.title} />
+          <>
+            <NaverBookSection title={item.title} />
+            <BookFindSection title={item.title} />
+          </>
         )}
       </div>
     </AppShell>
+  );
+}
+
+function NaverBookSection({ title }: { title: string }) {
+  const fetcher = useServerFn(searchNaverBooks);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["naver-books", title],
+    queryFn: () => fetcher({ data: { query: title, display: 5 } }),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  return (
+    <div className="mt-6">
+      <h3 className="text-sm font-bold mb-2">🔎 네이버 도서 검색</h3>
+      {isLoading && (
+        <p className="text-[12px] text-muted-foreground px-1">검색 중...</p>
+      )}
+      {error && (
+        <p className="text-[12px] text-destructive px-1">검색에 실패했어요.</p>
+      )}
+      {data?.error && (
+        <p className="text-[12px] text-destructive px-1">{data.error}</p>
+      )}
+      {data && data.items.length === 0 && !data.error && !isLoading && (
+        <p className="text-[12px] text-muted-foreground px-1">검색 결과가 없어요.</p>
+      )}
+      <div className="space-y-2">
+        {data?.items.map((b) => (
+          <a
+            key={b.link}
+            href={b.link}
+            target="_blank"
+            rel="noreferrer"
+            className="flex gap-3 p-3 rounded-2xl bg-card border border-border"
+          >
+            {b.image ? (
+              <img
+                src={b.image}
+                alt={b.title}
+                className="w-12 h-16 object-cover rounded-md flex-none bg-muted"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-12 h-16 rounded-md bg-muted flex-none" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm leading-snug line-clamp-2">{b.title}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                {b.author || "저자 미상"}
+                {b.publisher ? ` · ${b.publisher}` : ""}
+              </p>
+              {b.discount && (
+                <p className="text-[11px] text-primary font-semibold mt-0.5">
+                  {Number(b.discount).toLocaleString()}원
+                </p>
+              )}
+            </div>
+            <ExternalLink className="size-4 text-muted-foreground flex-none self-center" />
+          </a>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground mt-2 px-1">
+        검색 결과는 네이버 책 검색 오픈 API를 통해 제공됩니다.
+      </p>
+    </div>
   );
 }
 
