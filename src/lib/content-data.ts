@@ -439,8 +439,20 @@ export const CONTENT: ContentItem[] = [
 export function libraryLinks(title: string) {
   const q = encodeURIComponent(title);
   return [
-    { name: "국립중앙도서관", url: `https://www.nl.go.kr/NL/contents/search.do?kwd=${q}` },
-    { name: "서울도서관", url: `https://elib.seoul.go.kr/contents/search.do?query=${q}` },
+    { name: "전국 공공도서관 통합검색 (책이음)", url: `https://www.nl.go.kr/NL/contents/search.do?kwd=${q}` },
+  ];
+}
+
+export function nearbyLibraryMapUrl(lat: number, lng: number) {
+  // Google Maps: 위치 기반 공공도서관 주변 검색
+  return `https://www.google.com/maps/search/공공도서관/@${lat},${lng},15z`;
+}
+
+export function shopLinks(title: string) {
+  const q = encodeURIComponent(title);
+  return [
     { name: "교보문고", url: `https://search.kyobobook.co.kr/search?keyword=${q}` },
+    { name: "알라딘", url: `https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=${q}` },
+    { name: "YES24", url: `https://www.yes24.com/Product/Search?domain=BOOK&query=${q}` },
   ];
 }

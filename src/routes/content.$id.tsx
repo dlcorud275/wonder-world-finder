@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Thumb } from "@/components/ContentCard";
-import { CONTENT, libraryLinks } from "@/lib/content-data";
+import { CONTENT, libraryLinks, shopLinks, nearbyLibraryMapUrl } from "@/lib/content-data";
 import { useBookmarks } from "@/lib/bookmarks";
-import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Play, MapPin, ShoppingBag } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/content/$id")({
   component: Detail,
@@ -78,29 +79,99 @@ function Detail() {
         )}
 
         {item.kind === "book" && (
-          <div className="mt-6">
-            <h3 className="text-sm font-bold mb-2">📚 도서관 · 서점에서 찾기</h3>
-            <div className="space-y-2">
-              {libraryLinks(item.title).map((l) => (
-                <a
-                  key={l.name}
-                  href={l.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border"
-                >
-                  <span className="font-semibold text-sm">{l.name}</span>
-                  <ExternalLink className="size-4 text-muted-foreground" />
-                </a>
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-2 px-1">
-              가까운 공공 도서관에서 무료로 대여하실 수 있어요.
-            </p>
-          </div>
+          <BookFindSection title={item.title} />
         )}
       </div>
     </AppShell>
+  );
+}
+
+function BookFindSection({ title }: { title: string }) {
+  const [geoState, setGeoState] = useState<"idle" | "loading" | "error">("idle");
+  const [geoMsg, setGeoMsg] = useState<string>("");
+
+  const findNearby = () => {
+    if (!("geolocation" in navigator)) {
+      setGeoState("error");
+      setGeoMsg("이 기기에서는 위치 정보를 사용할 수 없어요.");
+      return;
+    }
+    setGeoState("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const url = nearbyLibraryMapUrl(pos.coords.latitude, pos.coords.longitude);
+        window.open(url, "_blank", "noopener,noreferrer");
+        setGeoState("idle");
+      },
+      (err) => {
+        setGeoState("error");
+        setGeoMsg(
+          err.code === err.PERMISSION_DENIED
+            ? "위치 권한이 거부되었어요. 브라우저 설정에서 허용해 주세요."
+            : "위치를 가져오지 못했어요. 잠시 후 다시 시도해 주세요.",
+        );
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+  };
+
+  return (
+    <>
+      <div className="mt-6">
+        <h3 className="text-sm font-bold mb-2">📚 도서관에서 빌리기</h3>
+        <button
+          onClick={findNearby}
+          disabled={geoState === "loading"}
+          className="flex items-center justify-between w-full p-3.5 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm active:scale-[0.99] transition-transform disabled:opacity-60"
+        >
+          <span className="flex items-center gap-2">
+            <MapPin className="size-4" />
+            {geoState === "loading" ? "위치 확인 중..." : "내 위치로 가까운 도서관 찾기"}
+          </span>
+          <ExternalLink className="size-4" />
+        </button>
+        {geoState === "error" && (
+          <p className="text-[11px] text-destructive mt-1.5 px-1">{geoMsg}</p>
+        )}
+        <div className="space-y-2 mt-2">
+          {libraryLinks(title).map((l) => (
+            <a
+              key={l.name}
+              href={l.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border"
+            >
+              <span className="font-semibold text-sm">{l.name}</span>
+              <ExternalLink className="size-4 text-muted-foreground" />
+            </a>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2 px-1">
+          가까운 공공 도서관에서 무료로 대여하실 수 있어요.
+        </p>
+      </div>
+
+      <div className="mt-6">
+        <h3 className="text-sm font-bold mb-2 flex items-center gap-1.5">
+          <ShoppingBag className="size-4" /> 구매하기
+        </h3>
+        <div className="space-y-2">
+          {shopLinks(title).map((l) => (
+            <a
+              key={l.name}
+              href={l.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border"
+            >
+              <span className="font-semibold text-sm">{l.name}</span>
+              <ExternalLink className="size-4 text-muted-foreground" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
