@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Thumb } from "@/components/ContentCard";
-import { CONTENT, libraryLinks, shopLinks, nearbyLibraryMapUrl } from "@/lib/content-data";
+import { CONTENT, shopLinks } from "@/lib/content-data";
+import { nearestLibraries, infoNaruSearchUrl, type SeoulLibrary } from "@/lib/seoul-libraries";
 import { useBookmarks } from "@/lib/bookmarks";
 import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Play, MapPin, ShoppingBag } from "lucide-react";
 import { useState } from "react";
@@ -89,6 +90,7 @@ function Detail() {
 function BookFindSection({ title }: { title: string }) {
   const [geoState, setGeoState] = useState<"idle" | "loading" | "error">("idle");
   const [geoMsg, setGeoMsg] = useState<string>("");
+  const [nearby, setNearby] = useState<(SeoulLibrary & { distanceKm: number })[]>([]);
 
   const findNearby = () => {
     if (!("geolocation" in navigator)) {
@@ -99,8 +101,7 @@ function BookFindSection({ title }: { title: string }) {
     setGeoState("loading");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const url = nearbyLibraryMapUrl(pos.coords.latitude, pos.coords.longitude);
-        window.open(url, "_blank", "noopener,noreferrer");
+        setNearby(nearestLibraries(pos.coords.latitude, pos.coords.longitude, 5));
         setGeoState("idle");
       },
       (err) => {
@@ -118,7 +119,7 @@ function BookFindSection({ title }: { title: string }) {
   return (
     <>
       <div className="mt-6">
-        <h3 className="text-sm font-bold mb-2">📚 도서관에서 빌리기</h3>
+        <h3 className="text-sm font-bold mb-2">📚 서울 공공도서관에서 빌리기</h3>
         <button
           onClick={findNearby}
           disabled={geoState === "loading"}
@@ -126,29 +127,48 @@ function BookFindSection({ title }: { title: string }) {
         >
           <span className="flex items-center gap-2">
             <MapPin className="size-4" />
-            {geoState === "loading" ? "위치 확인 중..." : "내 위치로 가까운 도서관 찾기"}
+            {geoState === "loading" ? "위치 확인 중..." : "내 위치로 가까운 서울 도서관 찾기"}
           </span>
           <ExternalLink className="size-4" />
         </button>
         {geoState === "error" && (
           <p className="text-[11px] text-destructive mt-1.5 px-1">{geoMsg}</p>
         )}
-        <div className="space-y-2 mt-2">
-          {libraryLinks(title).map((l) => (
-            <a
-              key={l.name}
-              href={l.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border"
-            >
-              <span className="font-semibold text-sm">{l.name}</span>
-              <ExternalLink className="size-4 text-muted-foreground" />
-            </a>
-          ))}
-        </div>
+        {nearby.length > 0 && (
+          <div className="space-y-2 mt-2">
+            {nearby.map((l) => (
+              <a
+                key={l.name}
+                href={l.homepage}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border"
+              >
+                <span className="flex flex-col">
+                  <span className="font-semibold text-sm">{l.name}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {l.district} · {l.distanceKm.toFixed(1)}km
+                  </span>
+                </span>
+                <ExternalLink className="size-4 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        )}
+        <a
+          href={infoNaruSearchUrl(title)}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border mt-2"
+        >
+          <span className="flex flex-col">
+            <span className="font-semibold text-sm">도서관정보나루에서 소장 도서관 검색</span>
+            <span className="text-[11px] text-muted-foreground">문체부 공개 오픈 API 기반</span>
+          </span>
+          <ExternalLink className="size-4 text-muted-foreground" />
+        </a>
         <p className="text-[11px] text-muted-foreground mt-2 px-1">
-          가까운 공공 도서관에서 무료로 대여하실 수 있어요.
+          서울 공공도서관 데이터는 서울 열린데이터광장 · 도서관정보나루(CC BY) 오픈 API 기반입니다.
         </p>
       </div>
 
