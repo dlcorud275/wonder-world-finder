@@ -108,9 +108,9 @@ function Index() {
       <section className="px-5 mt-7">
         <div className="flex items-end justify-between mb-3">
           <div>
-            <h2 className="text-lg font-bold">도서관 인기 도서</h2>
+            <h2 className="text-lg font-bold">실시간 추천 도서</h2>
             <p className="text-xs text-muted-foreground">
-              {stageInfo?.label} · 도서관 정보나루 다대출 도서
+              {stageInfo?.label} · 도서관/서점 바로가기 제공
             </p>
           </div>
         </div>
