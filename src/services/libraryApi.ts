@@ -1,12 +1,7 @@
-// 도서관 정보나루 (data4library.kr) OpenAPI 연동 서비스 레이어.
-// API Key 보안 + CORS 회피를 위해 외부 프록시 / Supabase Edge Function 경유 호출을 가정합니다.
-// 엔드포인트는 환경변수(VITE_LIBRARY_API_BASE)로 주입하거나 기본 placeholder 사용.
-
-const BASE_URL =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_LIBRARY_API_BASE) ||
-  "https://api.example-proxy.dev/data4library";
-
-const DEFAULT_TIMEOUT_MS = 7000;
+// 도서 추천 데이터 서비스 레이어.
+// 실제 도서 검색은 네이버 도서 검색 OpenAPI(서버 함수)를 통해 수행하며,
+// API 실패 시 큐레이션된 백업 도서 목록으로 graceful fallback 합니다.
+import { searchNaverBooks } from "@/lib/naver-books.functions";
 
 export type AgeGroup = "infant" | "toddler" | "early" | "middle";
 
@@ -31,17 +26,12 @@ export const SEOCHO_LIBRARIES: { name: string; libCode: string }[] = [
   { name: "서초구립내곡도서관", libCode: "141056" },
 ];
 
-async function fetchWithTimeout(url: string, ms = DEFAULT_TIMEOUT_MS) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } finally {
-    clearTimeout(t);
-  }
-}
+const AGE_QUERIES: Record<AgeGroup, string> = {
+  infant: "0-3세 그림책",
+  toddler: "유아 그림책 베스트",
+  early: "초등 저학년 동화 추천",
+  middle: "초등 고학년 추천도서",
+};
 
 // ── Mock fallback 데이터 (오프라인 / 장애 시 대체) ────────────────────────────
 const MOCK_POPULAR: Record<AgeGroup, PopularBook[]> = {
@@ -77,55 +67,35 @@ export class LibraryApiError extends Error {
   }
 }
 
-/** 다대출 도서 API 호출 (연령별 인기 도서) */
+/** 연령별 인기/추천 도서 (네이버 도서 검색 OpenAPI 기반) */
 export async function fetchPopularBooks(
   ageGroup: AgeGroup,
 ): Promise<{ books: PopularBook[]; usedMock: boolean; errorMessage?: string }> {
   try {
-    const url = `${BASE_URL}/popular?age=${encodeURIComponent(ageGroup)}`;
-    const json = await fetchWithTimeout(url);
-    const list = (json?.response?.docs ?? json?.docs ?? json?.books ?? []) as any[];
-    if (!Array.isArray(list) || list.length === 0) throw new Error("Empty response");
-    const books: PopularBook[] = list.map((d) => {
-      const doc = d.doc ?? d;
-      return {
-        isbn: String(doc.isbn13 ?? doc.isbn ?? ""),
-        title: String(doc.bookname ?? doc.title ?? ""),
-        author: String(doc.authors ?? doc.author ?? ""),
-        publisher: String(doc.publisher ?? ""),
-        imageUrl: String(doc.bookImageURL ?? doc.imageUrl ?? ""),
-      };
+    const result = await searchNaverBooks({
+      data: { query: AGE_QUERIES[ageGroup], display: 10 },
     });
+    if (result.error || result.items.length === 0) {
+      throw new Error(result.error ?? "Empty response");
+    }
+    const books: PopularBook[] = result.items.map((b) => ({
+      // ISBN10/ISBN13 둘 다 올 수 있어 마지막(보통 ISBN13) 선택
+      isbn: (b.isbn || "").split(" ").pop() || "",
+      title: b.title,
+      author: b.author.replace(/\^/g, ", "),
+      publisher: b.publisher,
+      imageUrl: b.image,
+    }));
     return { books, usedMock: false };
   } catch (err) {
     console.warn("[libraryApi] fetchPopularBooks fallback:", err);
     return {
       books: MOCK_POPULAR[ageGroup],
       usedMock: true,
-      errorMessage:
-        "도서관 정보 시스템과 연결이 원활하지 않습니다. 가상 데이터로 대체합니다.",
+      errorMessage: "추천 도서를 실시간으로 불러오지 못해 큐레이션된 목록을 보여드려요.",
     };
   }
 }
 
-/** 지역별 소장도서 조회 API 호출 (특정 도서관 대출 가능 여부) */
-export async function checkBookAvailability(
-  isbn: string,
-  libCode: string,
-): Promise<AvailabilityResult & { usedMock: boolean }> {
-  try {
-    const url = `${BASE_URL}/availability?isbn=${encodeURIComponent(isbn)}&libCode=${encodeURIComponent(libCode)}`;
-    const json = await fetchWithTimeout(url, 5000);
-    const book = json?.response?.result?.book ?? json?.book ?? json;
-    const hasBook = Boolean(book?.hasBook === "Y" || book?.hasBook === true);
-    const loanAvailable = Boolean(book?.loanAvailable === "Y" || book?.loanAvailable === true);
-    return { hasBook, loanAvailable, usedMock: false };
-  } catch (err) {
-    console.warn("[libraryApi] checkBookAvailability fallback:", err);
-    // 결정론적 mock: isbn+libCode 해시 기반
-    const seed = (isbn + libCode).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-    const hasBook = seed % 4 !== 0; // 75% 소장
-    const loanAvailable = hasBook && seed % 3 !== 0; // 소장 중 약 66% 대출가능
-    return { hasBook, loanAvailable, usedMock: true };
-  }
-}
+// 실시간 소장/대출 조회 API는 CORS와 보안상 직접 호출이 어렵습니다.
+// 대신 각 도서관 공식 사이트의 검색 결과로 사용자를 안내합니다 (ApiBookCard 참고).
