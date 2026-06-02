@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ContentCard, ContentRow } from "@/components/ContentCard";
 import { LangTabs } from "@/components/LangTabs";
 import { CONTENT, STAGES, type Stage, type Language } from "@/lib/content-data";
 import { getChildProfile, stageFromBirthYear } from "@/lib/child-profile";
-import { Sparkles, RefreshCw, Settings } from "lucide-react";
+import { Sparkles, RefreshCw, Settings, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { fetchPopularBooks, type AgeGroup, type PopularBook } from "@/services/libraryApi";
+import { ApiBookCard } from "@/components/ApiBookCard";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -14,9 +16,32 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const profile = getChildProfile();
-  const stage: Stage = stageFromBirthYear(profile.birthYear);
+  const autoStage: Stage = stageFromBirthYear(profile.birthYear);
+  const [stage, setStage] = useState<Stage>(autoStage);
   const [lang, setLang] = useState<Language>("en");
   const [bookSeed, setBookSeed] = useState(0);
+  const [apiBooks, setApiBooks] = useState<PopularBook[]>([]);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiNotice, setApiNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setApiLoading(true);
+    setApiNotice(null);
+    fetchPopularBooks(stage as AgeGroup)
+      .then((r) => {
+        if (cancelled) return;
+        setApiBooks(r.books);
+        setApiNotice(r.errorMessage ?? null);
+      })
+      .finally(() => {
+        if (!cancelled) setApiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stage]);
+
   const items = CONTENT.filter(
     (c) => c.stage === stage && (c.language ?? "ko") === lang,
   );
@@ -45,6 +70,24 @@ function Index() {
           </Link>
         </div>
         <div className="mt-3"><LangTabs value={lang} onChange={setLang} /></div>
+        <div className="mt-3 flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+          {STAGES.map((s) => {
+            const active = s.id === stage;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setStage(s.id)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary text-foreground border-border"
+                }`}
+              >
+                {s.emoji} {s.label} {s.ages}
+              </button>
+            );
+          })}
+        </div>
       </header>
 
       <section className="px-5 mt-6">
@@ -60,6 +103,36 @@ function Index() {
             <p className="text-xs text-muted-foreground">아이 관심사를 알려주면 골라드려요</p>
           </div>
         </Link>
+      </section>
+
+      <section className="px-5 mt-7">
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <h2 className="text-lg font-bold">도서관 인기 도서</h2>
+            <p className="text-xs text-muted-foreground">
+              {stageInfo?.label} · 도서관 정보나루 다대출 도서
+            </p>
+          </div>
+        </div>
+        {apiNotice && (
+          <div className="mb-2 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-[11px] text-muted-foreground">
+            {apiNotice}
+          </div>
+        )}
+        {apiLoading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            <span className="text-xs">도서관 데이터를 불러오는 중...</span>
+          </div>
+        ) : apiBooks.length > 0 ? (
+          <div className="space-y-2">
+            {apiBooks.map((b) => (
+              <ApiBookCard key={b.isbn} book={b} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">표시할 도서가 없어요</p>
+        )}
       </section>
 
       <section className="px-5 mt-7">
