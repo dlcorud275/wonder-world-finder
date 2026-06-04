@@ -23,16 +23,19 @@ function Index() {
   const [apiBooks, setApiBooks] = useState<PopularBook[]>([]);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiNotice, setApiNotice] = useState<string | null>(null);
+  const [apiSeed, setApiSeed] = useState(() => Math.floor(Math.random() * 1000));
+  const [apiQuery, setApiQuery] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
     setApiLoading(true);
     setApiNotice(null);
-    fetchPopularBooks(stage as AgeGroup)
+    fetchPopularBooks(stage as AgeGroup, apiSeed)
       .then((r) => {
         if (cancelled) return;
         setApiBooks(r.books);
         setApiNotice(r.errorMessage ?? null);
+        setApiQuery(r.query);
       })
       .finally(() => {
         if (!cancelled) setApiLoading(false);
@@ -40,7 +43,7 @@ function Index() {
     return () => {
       cancelled = true;
     };
-  }, [stage]);
+  }, [stage, apiSeed]);
 
   const items = CONTENT.filter(
     (c) => c.stage === stage && (c.language ?? "ko") === lang,
@@ -110,9 +113,19 @@ function Index() {
           <div>
             <h2 className="text-lg font-bold">실시간 추천 도서</h2>
             <p className="text-xs text-muted-foreground">
-              {stageInfo?.label} · 도서관/서점 바로가기 제공
+              {stageInfo?.label}
+              {apiQuery && ` · "${apiQuery}"`}
             </p>
           </div>
+          <button
+            onClick={() => setApiSeed((s) => s + 1)}
+            disabled={apiLoading}
+            className="inline-flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5 text-xs font-semibold text-foreground active:scale-95 transition-transform disabled:opacity-60"
+            aria-label="새로운 추천 키워드로 보기"
+          >
+            <RefreshCw className={`size-3.5 ${apiLoading ? "animate-spin" : ""}`} />
+            새 키워드
+          </button>
         </div>
         {apiNotice && (
           <div className="mb-2 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-[11px] text-muted-foreground">

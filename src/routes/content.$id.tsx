@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
 import { Thumb } from "@/components/ContentCard";
 import { CONTENT, shopLinks } from "@/lib/content-data";
-import { nearestLibraries, infoNaruSearchUrl, type SeoulLibrary } from "@/lib/seoul-libraries";
+import { nearestLibraries, type SeoulLibrary } from "@/lib/seoul-libraries";
 import { searchNaverBooks } from "@/lib/naver-books.functions";
 import { useBookmarks } from "@/lib/bookmarks";
 import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Play, MapPin, ShoppingBag } from "lucide-react";
@@ -207,34 +207,68 @@ function BookFindSection({ title }: { title: string }) {
         )}
         {nearby.length > 0 && (
           <div className="space-y-2 mt-2">
-            {nearby.map((l) => (
-              <a
-                key={l.name}
-                href={l.homepage}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border"
-              >
-                <span className="flex flex-col">
-                  <span className="font-semibold text-sm">{l.name}</span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {l.district} · {l.distanceKm.toFixed(1)}km
-                  </span>
-                </span>
-                <ExternalLink className="size-4 text-muted-foreground" />
-              </a>
-            ))}
+            {nearby.map((l) => {
+              // 각 도서관 사이트의 카탈로그 URL 패턴이 모두 달라, 도서명과 도서관 사이트를
+              // 조합한 구글 검색으로 실제 소장/검색 결과 페이지로 연결합니다.
+              const site = new URL(l.homepage).host;
+              const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                `${title} site:${site}`,
+              )}`;
+              return (
+                <div
+                  key={l.name}
+                  className="rounded-2xl bg-card border border-border overflow-hidden"
+                >
+                  <a
+                    href={searchUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between p-3.5"
+                  >
+                    <span className="flex flex-col">
+                      <span className="font-semibold text-sm">{l.name}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {l.district} · {l.distanceKm.toFixed(1)}km · 이 도서관에서 검색
+                      </span>
+                    </span>
+                    <ExternalLink className="size-4 text-muted-foreground" />
+                  </a>
+                  <a
+                    href={l.homepage}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground hover:bg-secondary/40"
+                  >
+                    도서관 홈페이지 바로가기 →
+                  </a>
+                </div>
+              );
+            })}
           </div>
         )}
         <a
-          href={infoNaruSearchUrl(title)}
+          href={`https://www.data4library.kr/bookSearchList?keyword=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noreferrer"
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border mt-2"
         >
           <span className="flex flex-col">
-            <span className="font-semibold text-sm">도서관정보나루에서 소장 도서관 검색</span>
-            <span className="text-[11px] text-muted-foreground">문체부 공개 오픈 API 기반</span>
+            <span className="font-semibold text-sm">전국 공공도서관 소장 검색 (정보나루)</span>
+            <span className="text-[11px] text-muted-foreground">
+              실시간 소장·대출 가능 도서관 확인
+            </span>
+          </span>
+          <ExternalLink className="size-4 text-muted-foreground" />
+        </a>
+        <a
+          href={`https://public.seocholib.or.kr/SOLARS_DM/main/menu/search/searchResult.do?searchType=ALL&searchKeyword=${encodeURIComponent(title)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border mt-2"
+        >
+          <span className="flex flex-col">
+            <span className="font-semibold text-sm">서초구립도서관 통합 검색</span>
+            <span className="text-[11px] text-muted-foreground">반포·양재·방배·내곡 등</span>
           </span>
           <ExternalLink className="size-4 text-muted-foreground" />
         </a>
