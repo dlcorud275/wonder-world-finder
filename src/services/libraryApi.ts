@@ -26,12 +26,49 @@ export const SEOCHO_LIBRARIES: { name: string; libCode: string }[] = [
   { name: "서초구립내곡도서관", libCode: "141056" },
 ];
 
-const AGE_QUERIES: Record<AgeGroup, string> = {
-  infant: "0-3세 그림책",
-  toddler: "유아 그림책 베스트",
-  early: "초등 저학년 동화 추천",
-  middle: "초등 고학년 추천도서",
+// 새로고침 시 매번 다른 키워드로 검색되도록 연령별 키워드 풀을 둡니다.
+const AGE_QUERY_POOL: Record<AgeGroup, string[]> = {
+  infant: [
+    "0-3세 그림책",
+    "베이비 보드북 베스트",
+    "영아 추천 그림책",
+    "엄마표 아기 그림책",
+    "0세 1세 그림책 추천",
+  ],
+  toddler: [
+    "유아 그림책 베스트",
+    "잠수네 추천 그림책",
+    "유아 영어 그림책 추천",
+    "어린이집 추천 그림책",
+    "4세 5세 그림책 추천",
+    "수상작 유아 그림책",
+  ],
+  early: [
+    "초등 저학년 동화 추천",
+    "잠수네 추천 원서",
+    "어린이 추천 도서",
+    "초등 1학년 추천도서",
+    "초등 2학년 권장도서",
+    "초등 저학년 영어 원서",
+    "사계절 저학년 동화",
+  ],
+  middle: [
+    "초등 고학년 추천도서",
+    "초등 5학년 권장도서",
+    "초등 6학년 필독서",
+    "잠수네 영어 원서 챕터북",
+    "어린이 청소년 추천도서",
+    "뉴베리상 수상작",
+    "초등 고학년 역사 추천도서",
+  ],
 };
+
+function pickQuery(ageGroup: AgeGroup, seed: number) {
+  const pool = AGE_QUERY_POOL[ageGroup];
+  // 양수 보장 + 모듈러
+  const idx = ((seed % pool.length) + pool.length) % pool.length;
+  return pool[idx];
+}
 
 // ── Mock fallback 데이터 (오프라인 / 장애 시 대체) ────────────────────────────
 const MOCK_POPULAR: Record<AgeGroup, PopularBook[]> = {
@@ -70,10 +107,12 @@ export class LibraryApiError extends Error {
 /** 연령별 인기/추천 도서 (네이버 도서 검색 OpenAPI 기반) */
 export async function fetchPopularBooks(
   ageGroup: AgeGroup,
-): Promise<{ books: PopularBook[]; usedMock: boolean; errorMessage?: string }> {
+  seed = 0,
+): Promise<{ books: PopularBook[]; usedMock: boolean; errorMessage?: string; query: string }> {
+  const query = pickQuery(ageGroup, seed);
   try {
     const result = await searchNaverBooks({
-      data: { query: AGE_QUERIES[ageGroup], display: 10 },
+      data: { query, display: 10 },
     });
     if (result.error || result.items.length === 0) {
       throw new Error(result.error ?? "Empty response");
@@ -86,13 +125,14 @@ export async function fetchPopularBooks(
       publisher: b.publisher,
       imageUrl: b.image,
     }));
-    return { books, usedMock: false };
+    return { books, usedMock: false, query };
   } catch (err) {
     console.warn("[libraryApi] fetchPopularBooks fallback:", err);
     return {
       books: MOCK_POPULAR[ageGroup],
       usedMock: true,
       errorMessage: "추천 도서를 실시간으로 불러오지 못해 큐레이션된 목록을 보여드려요.",
+      query,
     };
   }
 }
