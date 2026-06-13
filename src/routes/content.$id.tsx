@@ -7,6 +7,7 @@ import { CONTENT, shopLinks } from "@/lib/content-data";
 import { nearestLibraries, type SeoulLibrary } from "@/lib/seoul-libraries";
 import { searchNaverBooks } from "@/lib/naver-books.functions";
 import { useBookmarks } from "@/lib/bookmarks";
+import { copyTitleAndNotify } from "@/lib/copy-title";
 import { ArrowLeft, Bookmark, BookmarkCheck, ExternalLink, Play, MapPin, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 
@@ -223,6 +224,7 @@ function BookFindSection({ title }: { title: string }) {
                     href={searchUrl}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => copyTitleAndNotify(title)}
                     className="flex items-center justify-between p-3.5"
                   >
                     <span className="flex flex-col">
@@ -237,6 +239,7 @@ function BookFindSection({ title }: { title: string }) {
                     href={l.homepage}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => copyTitleAndNotify(title)}
                     className="block border-t border-border px-3.5 py-2 text-[11px] text-muted-foreground hover:bg-secondary/40"
                   >
                     도서관 홈페이지 바로가기 →
@@ -250,6 +253,7 @@ function BookFindSection({ title }: { title: string }) {
           href={`https://www.data4library.kr/bookSearchList?keyword=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noreferrer"
+          onClick={() => copyTitleAndNotify(title)}
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border mt-2"
         >
           <span className="flex flex-col">
@@ -264,6 +268,7 @@ function BookFindSection({ title }: { title: string }) {
           href={`https://public.seocholib.or.kr/SOLARS_DM/main/menu/search/searchResult.do?searchType=ALL&searchKeyword=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noreferrer"
+          onClick={() => copyTitleAndNotify(title)}
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border mt-2"
         >
           <span className="flex flex-col">
