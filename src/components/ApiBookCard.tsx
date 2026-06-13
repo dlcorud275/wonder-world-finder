@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink, ShoppingBag } from "lucide-react";
 import { SEOCHO_LIBRARIES, type PopularBook } from "@/services/libraryApi";
+import { copyTitleAndNotify } from "@/lib/copy-title";
 
 /**
  * 실제 도서관/서점 검색 페이지로 연결되는 도서 카드.
@@ -56,6 +57,7 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
                 href={seochoSearchUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => copyTitleAndNotify(book.title)}
                 className="flex items-center justify-between gap-1 rounded-lg bg-card border border-border px-2 py-1.5 text-[11px] hover:bg-secondary"
               >
                 <span className="truncate">{l.name.replace("서초구립", "")}</span>
@@ -68,6 +70,7 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
               href={data4LibraryUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => copyTitleAndNotify(book.title)}
               className="flex items-center justify-between rounded-lg bg-card border border-border px-3 py-2 text-[12px] hover:bg-secondary"
             >
               <span>전국 공공도서관 검색 (정보나루)</span>
@@ -77,6 +80,7 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
               href={naverBookUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => copyTitleAndNotify(book.title)}
               className="flex items-center justify-between rounded-lg bg-primary text-primary-foreground px-3 py-2 text-[12px] font-semibold"
             >
               <span className="inline-flex items-center gap-1.5">
