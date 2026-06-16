@@ -10,10 +10,10 @@ import { copyTitleAndNotify } from "@/lib/copy-title";
  */
 export function ApiBookCard({ book }: { book: PopularBook }) {
   const [open, setOpen] = useState(false);
-  const q = encodeURIComponent(book.isbn || book.title);
+  const q = encodeURIComponent(book.title);
 
-  // 서초구립도서관 통합 검색 (공식): https://public.seocholib.or.kr
-  const seochoSearchUrl = `https://public.seocholib.or.kr/SOLARS_DM/main/menu/search/searchResult.do?searchType=ALL&searchKeyword=${q}`;
+  // 서초구립도서관 통합 검색 (공식): 검색 결과에서 소장 도서관/대출상태/예약을 확인합니다.
+  const seochoSearchUrl = `https://public.seocholib.or.kr/Search/KeywordSearchResult/${q}`;
   // 도서관 정보나루 도서 검색 (공식): https://www.data4library.kr
   const data4LibraryUrl = `https://www.data4library.kr/bookSearchList?keyword=${q}`;
   // 네이버 도서 (구매/상세): https://search.shopping.naver.com/book
@@ -73,7 +73,7 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
               onClick={() => copyTitleAndNotify(book.title)}
               className="flex items-center justify-between rounded-lg bg-card border border-border px-3 py-2 text-[12px] hover:bg-secondary"
             >
-              <span>전국 공공도서관 검색 (정보나루)</span>
+              <span>전국 공공도서관 검색</span>
               <ExternalLink className="size-3.5 text-muted-foreground" />
             </a>
             <a
@@ -91,7 +91,8 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
             </a>
           </div>
           <p className="text-[10px] text-muted-foreground pt-0.5">
-            * 각 도서관의 실시간 소장/대출 정보는 공식 사이트에서 확인할 수 있어요.
+            * 링크를 누르면 책 제목이 복사되고, 공식 검색 결과에서 소장·대출·예약을 확인할 수
+            있어요.
           </p>
         </div>
       )}

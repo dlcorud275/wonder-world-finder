@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { getChildProfile } from "@/lib/child-profile";
 import { Settings, Loader2, Link2, Sparkles, X } from "lucide-react";
@@ -21,6 +22,7 @@ interface AnalysisEntry {
 
 function Index() {
   const profile = getChildProfile();
+  const analyzeUrl = useServerFn(analyzeUrlFn);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,7 @@ function Index() {
     setError(null);
     setLoading(true);
     try {
-      const result = await analyzeUrlFn({ data: { url: url.trim() } });
+      const result = await analyzeUrl({ data: { url: url.trim() } });
       if (result.books.length === 0) {
         setError("이 글에서 추천 도서를 찾지 못했어요.");
       } else {
@@ -65,7 +67,9 @@ function Index() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
-            <h1 className="text-2xl font-bold mt-1">블로그 속 추천 도서를{"\n"}한 번에 모아드려요</h1>
+            <h1 className="text-2xl font-bold mt-1">
+              블로그 속 추천 도서를{"\n"}한 번에 모아드려요
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {profile.name} · 교육 인플루언서 글 분석
             </p>
@@ -109,11 +113,10 @@ function Index() {
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            네이버 블로그, 티스토리, 브런치 등 공개 글의 본문을 읽어 추천 도서를 자동으로 추출합니다.
+            네이버 블로그, 티스토리, 브런치 등 공개 글 본문에서 책 제목을 추출하고 도서관 검색으로
+            연결합니다.
           </p>
-          {error && (
-            <p className="mt-2 text-xs text-destructive">{error}</p>
-          )}
+          {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
         </form>
       </section>
 
