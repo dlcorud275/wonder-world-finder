@@ -51,12 +51,8 @@ function ensureProtocol(rawUrl: string) {
 
 function decodeHtmlEntities(text: string) {
   return text
-    .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    )
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-      String.fromCharCode(parseInt(hex, 16)),
-    )
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
     .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(Number(num)))
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -81,7 +77,9 @@ function htmlToText(html: string) {
 function extractTitle(html: string) {
   const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   return m
-    ? htmlToText(m[1]).replace(/: 네이버 블로그$/i, "").slice(0, 120)
+    ? htmlToText(m[1])
+        .replace(/: 네이버 블로그$/i, "")
+        .slice(0, 120)
     : "";
 }
 
@@ -125,9 +123,7 @@ async function fetchHtml(url: string, referer?: string): Promise<FetchedPage> {
 }
 
 function resolveNestedFrame(html: string, baseUrl: string) {
-  const match = html.match(
-    /<iframe[^>]+(?:id|name)=["']mainFrame["'][^>]+src=["']([^"']+)["']/i,
-  );
+  const match = html.match(/<iframe[^>]+(?:id|name)=["']mainFrame["'][^>]+src=["']([^"']+)["']/i);
   if (!match) return null;
   try {
     return new URL(decodeHtmlEntities(match[1]), baseUrl).toString();
@@ -159,14 +155,10 @@ function extractMainText(html: string) {
   const candidates = markers
     .map((marker) => {
       const start = html.indexOf(marker);
-      return start < 0
-        ? ""
-        : htmlToText(html.slice(Math.max(0, start - 500), start + 90000));
+      return start < 0 ? "" : htmlToText(html.slice(Math.max(0, start - 500), start + 90000));
     })
     .filter((text) => text.length > 200);
-  candidates.push(
-    htmlToText(html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? html),
-  );
+  candidates.push(htmlToText(html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? html));
   return candidates
     .sort((a, b) => b.length - a.length)[0]
     .split("\n")
@@ -185,7 +177,9 @@ function parseJsonObject(text: string) {
 }
 
 function normalizeComparable(value: string) {
-  return stripHtml(value).replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
+  return stripHtml(value)
+    .replace(/[\s\p{P}\p{S}]/gu, "")
+    .toLowerCase();
 }
 
 async function enrichWithNaverBook(title: string, author: string): Promise<Partial<AnalyzedBook>> {
@@ -206,10 +200,11 @@ async function enrichWithNaverBook(title: string, author: string): Promise<Parti
     if (!res.ok) return {};
     const json = (await res.json()) as { items?: NaverBookItem[] };
     const target = normalizeComparable(title);
-    const best = (json.items ?? []).find((item) => {
-      const itemTitle = normalizeComparable(item.title);
-      return itemTitle.includes(target) || target.includes(itemTitle);
-    }) ?? json.items?.[0];
+    const best =
+      (json.items ?? []).find((item) => {
+        const itemTitle = normalizeComparable(item.title);
+        return itemTitle.includes(target) || target.includes(itemTitle);
+      }) ?? json.items?.[0];
     if (!best) return {};
     return {
       isbn: (best.isbn || "").split(" ").pop() || "",
@@ -268,9 +263,7 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
       const output = BookListSchema.parse(parseJsonObject(result.text));
       const deduped = Array.from(
         new Map(
-          output.books
-            .filter((b) => b.title.trim())
-            .map((b) => [normalizeComparable(b.title), b]),
+          output.books.filter((b) => b.title.trim()).map((b) => [normalizeComparable(b.title), b]),
         ).values(),
       ).slice(0, 20);
       const books = await Promise.all(
