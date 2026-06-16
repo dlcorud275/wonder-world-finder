@@ -1,57 +1,63 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { ContentCard, ContentRow } from "@/components/ContentCard";
-import { LangTabs } from "@/components/LangTabs";
-import { CONTENT, STAGES, type Stage, type Language } from "@/lib/content-data";
-import { getChildProfile, stageFromBirthYear } from "@/lib/child-profile";
-import { Sparkles, RefreshCw, Settings, Loader2 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { fetchPopularBooks, type AgeGroup, type PopularBook } from "@/services/libraryApi";
+import { getChildProfile } from "@/lib/child-profile";
+import { Settings, Loader2, Link2, Sparkles, X } from "lucide-react";
 import { ApiBookCard } from "@/components/ApiBookCard";
+import { analyzeUrlFn, type AnalyzedBook } from "@/lib/analyze-url.functions";
+import type { PopularBook } from "@/services/libraryApi";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
+interface AnalysisEntry {
+  id: string;
+  url: string;
+  sourceTitle: string;
+  books: AnalyzedBook[];
+  createdAt: number;
+}
+
 function Index() {
   const profile = getChildProfile();
-  const autoStage: Stage = stageFromBirthYear(profile.birthYear);
-  const [stage, setStage] = useState<Stage>(autoStage);
-  const [lang, setLang] = useState<Language>("en");
-  const [bookSeed, setBookSeed] = useState(0);
-  const [apiBooks, setApiBooks] = useState<PopularBook[]>([]);
-  const [apiLoading, setApiLoading] = useState(false);
-  const [apiNotice, setApiNotice] = useState<string | null>(null);
-  const [apiSeed, setApiSeed] = useState(() => Math.floor(Math.random() * 1000));
-  const [apiQuery, setApiQuery] = useState<string>("");
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [analyses, setAnalyses] = useState<AnalysisEntry[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setApiLoading(true);
-    setApiNotice(null);
-    fetchPopularBooks(stage as AgeGroup, apiSeed)
-      .then((r) => {
-        if (cancelled) return;
-        setApiBooks(r.books);
-        setApiNotice(r.errorMessage ?? null);
-        setApiQuery(r.query);
-      })
-      .finally(() => {
-        if (!cancelled) setApiLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [stage, apiSeed]);
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!url.trim() || loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await analyzeUrlFn({ data: { url: url.trim() } });
+      if (result.books.length === 0) {
+        setError("이 글에서 추천 도서를 찾지 못했어요.");
+      } else {
+        setAnalyses((prev) => [
+          {
+            id: `${Date.now()}`,
+            url: url.trim(),
+            sourceTitle: result.sourceTitle || url.trim(),
+            books: result.books,
+            createdAt: Date.now(),
+          },
+          ...prev,
+        ]);
+        setUrl("");
+      }
+    } catch (err: any) {
+      setError(err?.message ?? "분석에 실패했어요.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const items = CONTENT.filter(
-    (c) => c.stage === stage && (c.language ?? "ko") === lang,
-  );
-  const allBooks = items.filter((i) => i.kind === "book");
-  const books = pickRotation(allBooks, 10, bookSeed);
-  const videos = items.filter((i) => i.kind === "video");
-  const stageInfo = STAGES.find((s) => s.id === stage);
+  function removeEntry(id: string) {
+    setAnalyses((prev) => prev.filter((a) => a.id !== id));
+  }
 
   return (
     <AppShell>
@@ -59,9 +65,9 @@ function Index() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
-            <h1 className="text-2xl font-bold mt-1">오늘은 어떤 이야기를{"\n"}만나볼까요?</h1>
+            <h1 className="text-2xl font-bold mt-1">블로그 속 추천 도서를{"\n"}한 번에 모아드려요</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {profile.name} · {stageInfo?.label} ({stageInfo?.ages})
+              {profile.name} · 교육 인플루언서 글 분석
             </p>
           </div>
           <Link
@@ -72,138 +78,101 @@ function Index() {
             <Settings className="size-4" />
           </Link>
         </div>
-        <div className="mt-3"><LangTabs value={lang} onChange={setLang} /></div>
-        <div className="mt-3 flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
-          {STAGES.map((s) => {
-            const active = s.id === stage;
-            return (
-              <button
-                key={s.id}
-                onClick={() => setStage(s.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border transition-colors ${
-                  active
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-secondary text-foreground border-border"
-                }`}
-              >
-                {s.emoji} {s.label} {s.ages}
-              </button>
-            );
-          })}
-        </div>
       </header>
 
-      <section className="px-5 mt-6">
-        <Link
-          to="/ai"
-          className="flex items-center gap-3 rounded-2xl bg-secondary p-4 border border-border"
-        >
-          <div className="size-10 rounded-xl bg-primary text-primary-foreground grid place-items-center">
-            <Sparkles className="size-5" />
+      <section className="px-5">
+        <form onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-3">
+          <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-2">
+            <Link2 className="size-3.5" /> 분석할 블로그/포스트 URL
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              required
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://blog.naver.com/..."
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !url.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-60 active:scale-95 transition-transform"
+            >
+              {loading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              분석
+            </button>
           </div>
-          <div className="flex-1">
-            <p className="font-semibold text-sm">AI 맞춤 추천 받기</p>
-            <p className="text-xs text-muted-foreground">아이 관심사를 알려주면 골라드려요</p>
-          </div>
-        </Link>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            네이버 블로그, 티스토리, 브런치 등 공개 글의 본문을 읽어 추천 도서를 자동으로 추출합니다.
+          </p>
+          {error && (
+            <p className="mt-2 text-xs text-destructive">{error}</p>
+          )}
+        </form>
       </section>
 
-      <section className="px-5 mt-7">
-        <div className="flex items-end justify-between mb-3">
-          <div>
-            <h2 className="text-lg font-bold">실시간 추천 도서</h2>
-            <p className="text-xs text-muted-foreground">
-              {stageInfo?.label}
-              {apiQuery && ` · "${apiQuery}"`}
-            </p>
+      {analyses.length === 0 && !loading && (
+        <section className="px-5 mt-8 text-center text-xs text-muted-foreground">
+          <p>아직 분석한 글이 없어요.</p>
+          <p className="mt-1">관심 있는 교육 블로그 글 주소를 붙여넣어 보세요.</p>
+        </section>
+      )}
+
+      {analyses.map((entry) => (
+        <section key={entry.id} className="px-5 mt-7">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold truncate">{entry.sourceTitle}</h2>
+              <a
+                href={entry.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-muted-foreground truncate block hover:text-primary"
+              >
+                {entry.url}
+              </a>
+              <p className="text-[11px] text-primary mt-0.5 font-semibold">
+                추천 도서 {entry.books.length}권
+              </p>
+            </div>
+            <button
+              onClick={() => removeEntry(entry.id)}
+              aria-label="목록에서 제거"
+              className="shrink-0 p-1.5 rounded-full bg-secondary border border-border text-muted-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
           </div>
-          <button
-            onClick={() => setApiSeed((s) => s + 1)}
-            disabled={apiLoading}
-            className="inline-flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5 text-xs font-semibold text-foreground active:scale-95 transition-transform disabled:opacity-60"
-            aria-label="새로운 추천 키워드로 보기"
-          >
-            <RefreshCw className={`size-3.5 ${apiLoading ? "animate-spin" : ""}`} />
-            새 키워드
-          </button>
-        </div>
-        {apiNotice && (
-          <div className="mb-2 rounded-xl border border-border bg-secondary/60 px-3 py-2 text-[11px] text-muted-foreground">
-            {apiNotice}
-          </div>
-        )}
-        {apiLoading ? (
-          <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            <span className="text-xs">도서관 데이터를 불러오는 중...</span>
-          </div>
-        ) : apiBooks.length > 0 ? (
           <div className="space-y-2">
-            {apiBooks.map((b) => (
-              <ApiBookCard key={b.isbn} book={b} />
+            {entry.books.map((b, i) => (
+              <div key={i} className="space-y-1">
+                <ApiBookCard book={toPopularBook(b)} />
+                {b.reason && (
+                  <p className="text-[11px] text-muted-foreground px-3 leading-relaxed">
+                    “{b.reason}”
+                  </p>
+                )}
+              </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">표시할 도서가 없어요</p>
-        )}
-      </section>
-
-      <section className="px-5 mt-7">
-        <div className="flex items-end justify-between mb-3">
-          <div>
-            <h2 className="text-lg font-bold">추천 책</h2>
-            <p className="text-xs text-muted-foreground">
-              {stageInfo?.desc}
-              {allBooks.length > 0 && ` · ${Math.min(10, allBooks.length)}/${allBooks.length}`}
-            </p>
-          </div>
-          {allBooks.length > 10 && (
-            <button
-              onClick={() => setBookSeed((s) => s + 1)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-secondary border border-border px-3 py-1.5 text-xs font-semibold text-foreground active:scale-95 transition-transform"
-              aria-label="새로운 추천"
-            >
-              <RefreshCw className="size-3.5" />
-              새로 보기
-            </button>
-          )}
-        </div>
-        {books.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {books.map((b) => <ContentCard key={b.id} item={b} />)}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">표시할 책이 없어요</p>
-        )}
-      </section>
-
-      <section className="px-5 mt-7">
-        <SectionTitle title="추천 영상" subtitle="검증된 교육 채널 위주" />
-        {videos.length > 0 ? (
-          <div className="space-y-2">
-            {videos.map((v) => <ContentRow key={v.id} item={v} />)}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">표시할 영상이 없어요</p>
-        )}
-      </section>
+        </section>
+      ))}
     </AppShell>
   );
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="mb-3">
-      <h2 className="text-lg font-bold">{title}</h2>
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}
-
-function pickRotation<T>(arr: T[], n: number, seed: number): T[] {
-  if (arr.length <= n) return arr;
-  const start = (seed * n) % arr.length;
-  const out: T[] = [];
-  for (let i = 0; i < n; i++) out.push(arr[(start + i) % arr.length]);
-  return out;
+function toPopularBook(b: AnalyzedBook): PopularBook {
+  return {
+    isbn: b.isbn,
+    title: b.title,
+    author: b.author,
+    publisher: b.publisher,
+    imageUrl: b.imageUrl,
+  };
 }
