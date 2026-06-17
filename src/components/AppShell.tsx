@@ -22,8 +22,7 @@ function BottomNav() {
   ] as const;
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-border bg-card/95 backdrop-blur z-50">
-      <ul className="grid grid-cols-4">
-      <ul className="hidden" />
+      <ul className="grid grid-cols-3">
         {items.map(({ to, label, icon: Icon }) => {
           const active = pathname === to || (to !== "/" && pathname.startsWith(to));
           return (
