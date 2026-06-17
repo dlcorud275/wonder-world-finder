@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { getChildProfile } from "@/lib/child-profile";
 import { Settings, Loader2, Link2, Sparkles, X } from "lucide-react";
 import { ApiBookCard } from "@/components/ApiBookCard";
+import { AdBanner } from "@/components/AdBanner";
 import { analyzeUrlFn, type AnalyzedBook } from "@/lib/analyze-url.functions";
 import type { PopularBook } from "@/services/libraryApi";
 
@@ -166,6 +167,10 @@ function Index() {
           </div>
         </section>
       ))}
+
+      <section className="px-5 mt-8">
+        <AdBanner />
+      </section>
     </AppShell>
   );
 }

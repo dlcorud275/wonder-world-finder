@@ -20,6 +20,7 @@ export interface AvailabilityResult {
 
 // 서초구 주요 도서관 (도서관 정보나루 libCode 매칭 - 실제 운영 시 정확한 코드로 교체)
 export const SEOCHO_LIBRARIES: { name: string; libCode: string }[] = [
+  { name: "서초구립우면도서관", libCode: "141057" },
   { name: "서초구립반포도서관", libCode: "141053" },
   { name: "서초구립양재도서관", libCode: "141054" },
   { name: "서초구립방배도서관", libCode: "141055" },
