@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
+import { resolveBookCover } from "./book-cover.functions";
 
 const RawInputSchema = z.object({ url: z.string().min(3).max(2000) });
 const BookListSchema = z.object({
@@ -12,6 +13,7 @@ const BookListSchema = z.object({
         author: z.string().optional().default(""),
         publisher: z.string().optional().default(""),
         reason: z.string().optional().default(""),
+        readingLevel: z.string().optional().default(""),
       }),
     )
     .max(20),
@@ -24,6 +26,7 @@ export interface AnalyzedBook {
   reason: string;
   isbn: string;
   imageUrl: string;
+  readingLevel: string;
 }
 
 export interface AnalyzeResult {
@@ -258,7 +261,7 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
         model: gateway("google/gemini-3-flash-preview"),
         system:
           "교육 블로그 본문에서 추천 도서명을 정확하게 추출하는 도서 큐레이터입니다. 추측하지 말고 본문에 근거가 있는 책만 JSON으로 반환합니다.",
-        prompt: `아래 블로그 본문에서 글쓴이가 실제로 추천하거나 소개한 책 제목만 추출하세요. JSON 객체만 반환하세요. 형식: {"books":[{"title":"책 제목","author":"저자 또는 빈 문자열","publisher":"출판사 또는 빈 문자열","reason":"본문 근거를 바탕으로 한국어 1문장"}]}\n\n규칙:\n- 사이트 메뉴, 댓글, 광고, 관련글은 제외합니다.\n- 같은 책은 한 번만 포함합니다.\n- 최대 20권입니다.\n\n[페이지 제목]\n${sourceTitle}\n\n[본문]\n${text}`,
+        prompt: `아래 블로그 본문에서 글쓴이가 실제로 추천하거나 소개한 책 제목만 추출하세요. JSON 객체만 반환하세요. 형식: {"books":[{"title":"책 제목","author":"저자 또는 빈 문자열","publisher":"출판사 또는 빈 문자열","reason":"본문 근거를 바탕으로 한국어 1문장","readingLevel":"AR/SR/Lexile 지수가 본문에 있으면 'AR 2.5' 'SR 600L' 'Lexile 700L' 같은 형식으로, 없으면 빈 문자열"}]}\n\n규칙:\n- 사이트 메뉴, 댓글, 광고, 관련글은 제외합니다.\n- 같은 책은 한 번만 포함합니다.\n- 최대 20권입니다.\n- readingLevel은 본문에 명시된 경우에만 채우고, 없으면 절대 추측하지 말고 빈 문자열로 두세요.\n\n[페이지 제목]\n${sourceTitle}\n\n[본문]\n${text}`,
       });
       const output = BookListSchema.parse(parseJsonObject(result.text));
       const deduped = Array.from(
@@ -271,13 +274,22 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
           const title = b.title.trim();
           const author = b.author?.trim() ?? "";
           const enriched = await enrichWithNaverBook(title, author);
+          const finalTitle = enriched.title || title;
+          const finalAuthor = enriched.author || author;
+          const finalIsbn = enriched.isbn ?? "";
+          let imageUrl = enriched.imageUrl ?? "";
+          if (!imageUrl) {
+            const cover = await resolveBookCover(finalTitle, finalAuthor, finalIsbn);
+            imageUrl = cover.imageUrl;
+          }
           return {
-            title: enriched.title || title,
-            author: enriched.author || author,
+            title: finalTitle,
+            author: finalAuthor,
             publisher: enriched.publisher || b.publisher?.trim() || "",
             reason: b.reason?.trim() ?? "",
-            isbn: enriched.isbn ?? "",
-            imageUrl: enriched.imageUrl ?? "",
+            isbn: finalIsbn,
+            imageUrl,
+            readingLevel: b.readingLevel?.trim() ?? "",
           };
         }),
       );
