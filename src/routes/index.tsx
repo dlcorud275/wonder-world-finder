@@ -156,7 +156,7 @@ function Index() {
           <div className="space-y-2">
             {entry.books.map((b, i) => (
               <div key={i} className="space-y-1">
-                <ApiBookCard book={toPopularBook(b)} />
+                <ApiBookCard book={toPopularBook(b)} readingLevel={b.readingLevel} />
                 {b.reason && (
                   <p className="text-[11px] text-muted-foreground px-3 leading-relaxed">
                     “{b.reason}”
