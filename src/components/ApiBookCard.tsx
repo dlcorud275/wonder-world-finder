@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, ExternalLink, ShoppingBag } from "lucide-react"
 import { useQuery } from "@tanstack/react-query";
 import { SEOCHO_LIBRARIES, type PopularBook } from "@/services/libraryApi";
 import { copyTitleAndNotify } from "@/lib/copy-title";
-import { searchNaverBooks } from "@/lib/naver-books.functions";
+import { findBookCover } from "@/lib/book-cover.functions";
 
 /**
  * 서초도서관# 앱 딥링크 시도 후 800ms 안에 포커스가 살아있으면 웹 검색으로 폴백.
@@ -30,23 +30,29 @@ function openSeochoApp(title: string, webFallback: string) {
  * - 각 서초구립도서관의 통합 검색 페이지(공식)로 ISBN 검색 결과를 새 탭으로 엽니다.
  * - 전국 단위 검색은 '도서관 정보나루' 공식 페이지로, 구매는 네이버 도서로 이동.
  */
-export function ApiBookCard({ book }: { book: PopularBook }) {
+export function ApiBookCard({
+  book,
+  readingLevel,
+}: {
+  book: PopularBook;
+  readingLevel?: string;
+}) {
   const [open, setOpen] = useState(false);
   const q = encodeURIComponent(book.title);
 
-  // 커버 이미지가 비어있으면 네이버 도서 검색으로 자동 보충
-  const { data: fallbackCover } = useQuery({
-    queryKey: ["book-cover", book.title, book.author],
+  // 커버 이미지가 비어있으면 Naver → Google Books → OpenLibrary 순으로 자동 보충
+  const { data: fallback } = useQuery({
+    queryKey: ["book-cover", book.title, book.author, book.isbn],
     enabled: !book.imageUrl && !!book.title,
     staleTime: 1000 * 60 * 60 * 24,
     queryFn: async () => {
-      const res = await searchNaverBooks({
-        data: { query: book.author ? `${book.title} ${book.author}` : book.title, display: 3 },
+      const res = await findBookCover({
+        data: { title: book.title, author: book.author ?? "", isbn: book.isbn ?? "" },
       });
-      return res.items[0]?.image ?? "";
+      return res.imageUrl;
     },
   });
-  const coverUrl = book.imageUrl || fallbackCover || "";
+  const coverUrl = book.imageUrl || fallback || "";
 
   // 서초구립도서관 통합 검색 (공식): 검색 결과에서 소장 도서관/대출상태/예약을 확인합니다.
   const seochoSearchUrl = `https://public.seocholib.or.kr/Search/KeywordSearchResult/${q}`;
@@ -54,7 +60,7 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
   const naverBookUrl = `https://search.shopping.naver.com/book/search?query=${q}`;
 
   return (
-    <div className="rounded-2xl bg-card border border-border overflow-hidden">
+    <div className="rounded-3xl bg-card border border-border overflow-hidden shadow-[0_2px_0_0_var(--color-secondary)]">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex gap-3 p-3 text-left active:scale-[0.99] transition-transform"
@@ -64,16 +70,22 @@ export function ApiBookCard({ book }: { book: PopularBook }) {
             src={coverUrl}
             alt={book.title}
             loading="lazy"
-            className="w-16 h-20 object-cover rounded-md bg-muted flex-none"
+            referrerPolicy="no-referrer"
+            className="w-16 h-20 object-cover rounded-xl bg-muted flex-none ring-1 ring-border"
             onError={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = "hidden")}
           />
         ) : (
-          <div className="w-16 h-20 rounded-md bg-muted flex-none animate-pulse" />
+          <div className="w-16 h-20 rounded-xl bg-muted flex-none flex items-center justify-center text-lg">📖</div>
         )}
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-sm leading-tight line-clamp-2">{book.title}</h3>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{book.author}</p>
           <p className="text-[10px] text-muted-foreground truncate">{book.publisher}</p>
+          {readingLevel && (
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-accent/40 text-accent-foreground px-2 py-0.5 text-[10px] font-bold">
+              📘 {readingLevel}
+            </span>
+          )}
           <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary font-semibold">
             도서관·서점에서 찾기
             {open ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
