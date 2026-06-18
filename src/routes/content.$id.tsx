@@ -250,21 +250,6 @@ function BookFindSection({ title }: { title: string }) {
           </div>
         )}
         <a
-          href={`https://www.data4library.kr/bookSearchList?keyword=${encodeURIComponent(title)}`}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => copyTitleAndNotify(title)}
-          className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border mt-2"
-        >
-          <span className="flex flex-col">
-            <span className="font-semibold text-sm">전국 공공도서관 소장 검색 (정보나루)</span>
-            <span className="text-[11px] text-muted-foreground">
-              실시간 소장·대출 가능 도서관 확인
-            </span>
-          </span>
-          <ExternalLink className="size-4 text-muted-foreground" />
-        </a>
-        <a
           href={`https://public.seocholib.or.kr/SOLARS_DM/main/menu/search/searchResult.do?searchType=ALL&searchKeyword=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noreferrer"
