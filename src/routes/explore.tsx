@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ContentRow, ContentCard } from "@/components/ContentCard";
 import { CONTENT, STAGES, type Stage, type Kind, type Language } from "@/lib/content-data";
@@ -12,7 +12,16 @@ export const Route = createFileRoute("/explore")({
 });
 
 function Explore() {
-  const [stage, setStage] = useState<Stage | "all">("all");
+  const [stage, setStage] = useState<Stage | "all">(() => {
+    if (typeof window === "undefined") return "all";
+    const saved = window.localStorage.getItem("explore-stage");
+    return (saved as Stage | "all") || "all";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("explore-stage", stage);
+    }
+  }, [stage]);
   const [kind, setKind] = useState<Kind | "all">("all");
   const [lang, setLang] = useState<Language>("en");
   const [q, setQ] = useState("");
