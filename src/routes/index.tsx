@@ -67,9 +67,9 @@ function Index() {
       <header className="px-5 pt-8 pb-4">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-primary uppercase">Kidsnest</p>
-            <h1 className="text-2xl font-bold mt-1">
-              블로그 속 추천 도서를{"\n"}한 번에 모아드려요
+            <p className="text-xs font-semibold tracking-widest text-primary uppercase">🐣 Kidsnest</p>
+            <h1 className="text-2xl font-bold mt-1 leading-snug">
+              블로그 속 추천 도서를<br />한 번에 모아드려요 ✨
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {profile.name} · 교육 인플루언서 글 분석
@@ -78,7 +78,7 @@ function Index() {
           <Link
             to="/settings"
             aria-label="설정"
-            className="shrink-0 p-2 rounded-full bg-secondary border border-border text-foreground"
+            className="shrink-0 p-2.5 rounded-full bg-secondary border border-border text-foreground shadow-sm"
           >
             <Settings className="size-4" />
           </Link>
