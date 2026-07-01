@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, ExternalLink, ShoppingBag } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Heart, ShoppingBag } from "lucide-react";
 import { SEOCHO_LIBRARIES, type PopularBook } from "@/services/libraryApi";
 import { copyTitleAndNotify } from "@/lib/copy-title";
+import { useApiBookmarks } from "@/lib/bookmarks";
 
 /**
  * 서초도서관# 앱 딥링크 시도 후 800ms 안에 포커스가 살아있으면 웹 검색으로 폴백.
@@ -37,6 +38,8 @@ export function ApiBookCard({
 }) {
   const [open, setOpen] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
+  const bookmarks = useApiBookmarks();
+  const saved = bookmarks.has(book);
   const q = encodeURIComponent(book.title);
 
   // 항상 서버 프록시를 통해 커버 이미지를 받아옴 (없으면 SVG 플레이스홀더 반환 → 무조건 표시)
@@ -57,7 +60,22 @@ export function ApiBookCard({
   const naverBookUrl = `https://search.shopping.naver.com/book/search?query=${q}`;
 
   return (
-    <div className="rounded-3xl bg-card border border-border overflow-hidden shadow-[0_2px_0_0_var(--color-secondary)]">
+    <div className="rounded-3xl bg-card border-2 border-border overflow-hidden shadow-[0_3px_0_0_var(--color-accent)] relative">
+      <button
+        type="button"
+        aria-label={saved ? "보관함에서 제거" : "보관함에 저장"}
+        onClick={(e) => {
+          e.stopPropagation();
+          bookmarks.toggle(book);
+        }}
+        className={`absolute top-2 right-2 z-10 rounded-full p-1.5 border-2 shadow-sm transition-transform active:scale-90 ${
+          saved
+            ? "bg-destructive text-destructive-foreground border-destructive"
+            : "bg-card text-muted-foreground border-border"
+        }`}
+      >
+        <Heart className={`size-3.5 ${saved ? "fill-current" : ""}`} />
+      </button>
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex gap-3 p-3 text-left active:scale-[0.99] transition-transform"
