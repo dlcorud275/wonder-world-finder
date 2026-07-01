@@ -96,8 +96,29 @@ async function fromGoogleBooks(title: string, author: string, isbn: string): Pro
 
 async function fromOpenLibrary(isbn: string): Promise<string> {
   if (!isbn) return "";
-  // OpenLibrary redirects; default=false returns 404 if missing.
   return `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(isbn)}-L.jpg?default=false`;
+}
+
+async function fromOpenLibraryTitle(title: string, author: string): Promise<string> {
+  try {
+    const u = new URL("https://openlibrary.org/search.json");
+    u.searchParams.set("title", title);
+    if (author) u.searchParams.set("author", author);
+    u.searchParams.set("limit", "5");
+    const r = await fetchWithTimeout(u.toString());
+    if (!r.ok) return "";
+    const j = (await r.json()) as { docs?: Array<{ cover_i?: number; title?: string }> };
+    const t = normalize(title);
+    const best =
+      (j.docs ?? []).find((d) => {
+        const n = normalize(d.title ?? "");
+        return d.cover_i && (n.includes(t) || t.includes(n));
+      }) ?? (j.docs ?? []).find((d) => d.cover_i);
+    if (!best?.cover_i) return "";
+    return `https://covers.openlibrary.org/b/id/${best.cover_i}-L.jpg`;
+  } catch {
+    return "";
+  }
 }
 
 function placeholderSvg(title: string) {
@@ -165,6 +186,7 @@ export const Route = createFileRoute("/api/public/cover")({
           () => fromKakao(title),
           () => fromGoogleBooks(title, author, isbn),
           () => fromOpenLibrary(isbn),
+          () => fromOpenLibraryTitle(title, author),
         ];
         for (const s of sources) {
           const src = await s().catch(() => "");
