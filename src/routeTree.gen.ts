@@ -14,6 +14,7 @@ import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContentIdRouteImport } from './routes/content.$id'
+import { Route as ApiPublicCoverRouteImport } from './routes/api/public/cover'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -40,6 +41,11 @@ const ContentIdRoute = ContentIdRouteImport.update({
   path: '/content/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCoverRoute = ApiPublicCoverRouteImport.update({
+  id: '/api/public/cover',
+  path: '/api/public/cover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/settings': typeof SettingsRoute
   '/content/$id': typeof ContentIdRoute
+  '/api/public/cover': typeof ApiPublicCoverRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/settings': typeof SettingsRoute
   '/content/$id': typeof ContentIdRoute
+  '/api/public/cover': typeof ApiPublicCoverRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,12 +70,25 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/settings': typeof SettingsRoute
   '/content/$id': typeof ContentIdRoute
+  '/api/public/cover': typeof ApiPublicCoverRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bookmarks' | '/explore' | '/settings' | '/content/$id'
+  fullPaths:
+    | '/'
+    | '/bookmarks'
+    | '/explore'
+    | '/settings'
+    | '/content/$id'
+    | '/api/public/cover'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bookmarks' | '/explore' | '/settings' | '/content/$id'
+  to:
+    | '/'
+    | '/bookmarks'
+    | '/explore'
+    | '/settings'
+    | '/content/$id'
+    | '/api/public/cover'
   id:
     | '__root__'
     | '/'
@@ -75,6 +96,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/settings'
     | '/content/$id'
+    | '/api/public/cover'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -83,6 +105,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   SettingsRoute: typeof SettingsRoute
   ContentIdRoute: typeof ContentIdRoute
+  ApiPublicCoverRoute: typeof ApiPublicCoverRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cover': {
+      id: '/api/public/cover'
+      path: '/api/public/cover'
+      fullPath: '/api/public/cover'
+      preLoaderRoute: typeof ApiPublicCoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -131,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   SettingsRoute: SettingsRoute,
   ContentIdRoute: ContentIdRoute,
+  ApiPublicCoverRoute: ApiPublicCoverRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

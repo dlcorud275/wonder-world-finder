@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink, ShoppingBag } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { SEOCHO_LIBRARIES, type PopularBook } from "@/services/libraryApi";
 import { copyTitleAndNotify } from "@/lib/copy-title";
-import { findBookCover } from "@/lib/book-cover.functions";
 
 /**
  * 서초도서관# 앱 딥링크 시도 후 800ms 안에 포커스가 살아있으면 웹 검색으로 폴백.
@@ -38,21 +36,20 @@ export function ApiBookCard({
   readingLevel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   const q = encodeURIComponent(book.title);
 
-  // 커버 이미지가 비어있으면 Naver → Google Books → OpenLibrary 순으로 자동 보충
-  const { data: fallback } = useQuery({
-    queryKey: ["book-cover", book.title, book.author, book.isbn],
-    enabled: !book.imageUrl && !!book.title,
-    staleTime: 1000 * 60 * 60 * 24,
-    queryFn: async () => {
-      const res = await findBookCover({
-        data: { title: book.title, author: book.author ?? "", isbn: book.isbn ?? "" },
-      });
-      return res.imageUrl;
-    },
-  });
-  const coverUrl = book.imageUrl || fallback || "";
+  // 항상 서버 프록시를 통해 커버 이미지를 받아옴 (없으면 SVG 플레이스홀더 반환 → 무조건 표시)
+  const proxyUrl = useMemo(() => {
+    const p = new URLSearchParams({
+      title: book.title,
+      author: book.author ?? "",
+      isbn: book.isbn ?? "",
+    });
+    return `/api/public/cover?${p.toString()}`;
+  }, [book.title, book.author, book.isbn]);
+  // 원본 imageUrl이 있으면 우선 시도 (referrer 없이 로드), 실패 시 프록시로 폴백
+  const coverUrl = imgFailed || !book.imageUrl ? proxyUrl : book.imageUrl;
 
   // 서초구립도서관 통합 검색 (공식): 검색 결과에서 소장 도서관/대출상태/예약을 확인합니다.
   const seochoSearchUrl = `https://public.seocholib.or.kr/Search/KeywordSearchResult/${q}`;
@@ -65,18 +62,16 @@ export function ApiBookCard({
         onClick={() => setOpen((v) => !v)}
         className="w-full flex gap-3 p-3 text-left active:scale-[0.99] transition-transform"
       >
-        {coverUrl ? (
-          <img
-            src={coverUrl}
-            alt={book.title}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            className="w-16 h-20 object-cover rounded-xl bg-muted flex-none ring-1 ring-border"
-            onError={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = "hidden")}
-          />
-        ) : (
-          <div className="w-16 h-20 rounded-xl bg-muted flex-none flex items-center justify-center text-lg">📖</div>
-        )}
+        <img
+          src={coverUrl}
+          alt={book.title}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="w-16 h-20 object-cover rounded-xl bg-muted flex-none ring-1 ring-border"
+          onError={() => {
+            if (!imgFailed) setImgFailed(true);
+          }}
+        />
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-sm leading-tight line-clamp-2">{book.title}</h3>
           <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{book.author}</p>
