@@ -81,7 +81,7 @@
   --accent-foreground: oklch(0.32 0.09 60);
   --destructive: oklch(0.62 0.22 22);
   --destructive-foreground: oklch(0.99 0.01 85);
-  --border: oklch(0.32 0.04 25);                  /* inky outline (sticker look) */
+  --border: oklch(0.88 0.03 60);                  /* soft cream border */
   --input: oklch(0.94 0.02 100);
   --ring: oklch(0.62 0.22 22);
   --chart-1: oklch(0.55 0.06 145);
