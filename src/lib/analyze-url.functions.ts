@@ -4,7 +4,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 import { resolveBookCover } from "./book-cover.functions";
 
-const RawInputSchema = z.object({ url: z.string().min(3).max(2000) });
+const RawInputSchema = z.object({ input: z.string().min(1).max(2000) });
 const BookListSchema = z.object({
   books: z
     .array(
@@ -32,6 +32,7 @@ export interface AnalyzedBook {
 export interface AnalyzeResult {
   sourceTitle: string;
   books: AnalyzedBook[];
+  mode?: "url" | "query";
 }
 
 interface FetchedPage {
@@ -50,6 +51,35 @@ interface NaverBookItem {
 function ensureProtocol(rawUrl: string) {
   const trimmed = rawUrl.trim();
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function looksLikeUrl(s: string) {
+  const t = s.trim();
+  if (/^https?:\/\//i.test(t)) return true;
+  return /^[\w-]+(\.[\w-]+)+(\/|$)/i.test(t) && !/\s/.test(t);
+}
+
+function isYoutube(url: string) {
+  try {
+    const h = new URL(url).hostname;
+    return /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(h);
+  } catch {
+    return false;
+  }
+}
+
+async function fetchYoutubeTitle(url: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      { signal: AbortSignal.timeout(8000) },
+    );
+    if (!res.ok) return "";
+    const json = (await res.json()) as { title?: string; author_name?: string };
+    return [json.title, json.author_name].filter(Boolean).join(" — ");
+  } catch {
+    return "";
+  }
 }
 
 function decodeHtmlEntities(text: string) {
@@ -223,29 +253,10 @@ async function enrichWithNaverBook(title: string, author: string): Promise<Parti
 }
 
 export const analyzeUrlFn = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => {
-    const parsed = RawInputSchema.parse(input);
-    const url = ensureProtocol(parsed.url);
-    z.string().url().parse(url);
-    return { url };
-  })
+  .inputValidator((input: unknown) => RawInputSchema.parse(input))
   .handler(async ({ data }): Promise<AnalyzeResult> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("AI 키가 설정되지 않았어요.");
-
-    let page: FetchedPage;
-    try {
-      page = await fetchReadablePage(data.url);
-    } catch (e) {
-      console.error("[analyzeUrlFn] fetch failed:", e);
-      throw new Error("URL을 불러오지 못했어요. 공개 글 주소인지 확인해 주세요.");
-    }
-
-    const sourceTitle = extractTitle(page.html) || page.url;
-    const text = extractMainText(page.html);
-    if (text.length < 120) {
-      throw new Error("페이지에서 본문을 충분히 찾지 못했어요.");
-    }
 
     const gateway = createOpenAICompatible({
       name: "lovable",
@@ -256,12 +267,50 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
       },
     });
 
+    const raw = data.input.trim();
+    let mode: "url" | "query" = "query";
+    let sourceTitle = raw;
+    let bodyForPrompt = "";
+    let promptHeader = "";
+
+    if (looksLikeUrl(raw)) {
+      const url = ensureProtocol(raw);
+      if (isYoutube(url)) {
+        mode = "query";
+        const yt = await fetchYoutubeTitle(url);
+        sourceTitle = yt || url;
+        promptHeader = `아래 YouTube 영상 제목/채널을 참고해 어린이/부모에게 도움이 될 만한 추천 도서 목록을 제안하세요.`;
+        bodyForPrompt = `[YouTube]\n${sourceTitle}\nURL: ${url}`;
+      } else {
+        try {
+          const page = await fetchReadablePage(url);
+          const text = extractMainText(page.html);
+          if (text.length >= 120) {
+            mode = "url";
+            sourceTitle = extractTitle(page.html) || page.url;
+            promptHeader = `아래 블로그 본문에서 글쓴이가 실제로 추천하거나 소개한 책 제목만 추출하세요.`;
+            bodyForPrompt = `[페이지 제목]\n${sourceTitle}\n\n[본문]\n${text}`;
+          }
+        } catch (e) {
+          console.warn("[analyzeUrlFn] URL fetch failed, falling back to query mode:", e);
+        }
+        if (mode === "query") {
+          promptHeader = `아래 URL/주제와 관련해 어린이/부모에게 도움이 될 만한 추천 도서 목록을 제안하세요.`;
+          bodyForPrompt = `[입력]\n${raw}`;
+        }
+      }
+    } else {
+      mode = "query";
+      promptHeader = `아래 입력은 (1)책 제목, (2)교육 인플루언서/저자 이름, (3)관심 주제 중 하나입니다. 이에 맞게 어린이/부모에게 도움이 될 만한 추천 도서 목록을 제안하세요. 책 제목이면 저자의 다른 대표작이나 비슷한 결의 책 위주로, 인플루언서 이름이면 그 사람이 자주 추천한다고 알려진 책 위주로 추천하세요.`;
+      bodyForPrompt = `[입력]\n${raw}`;
+    }
+
     try {
       const result = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
         system:
-          "교육 블로그 본문에서 추천 도서명을 정확하게 추출하는 도서 큐레이터입니다. 추측하지 말고 본문에 근거가 있는 책만 JSON으로 반환합니다.",
-        prompt: `아래 블로그 본문에서 글쓴이가 실제로 추천하거나 소개한 책 제목만 추출하세요. JSON 객체만 반환하세요. 형식: {"books":[{"title":"책 제목","author":"저자 또는 빈 문자열","publisher":"출판사 또는 빈 문자열","reason":"본문 근거를 바탕으로 한국어 1문장","readingLevel":"AR/SR/Lexile 지수가 본문에 있으면 'AR 2.5' 'SR 600L' 'Lexile 700L' 같은 형식으로, 없으면 빈 문자열"}]}\n\n규칙:\n- 사이트 메뉴, 댓글, 광고, 관련글은 제외합니다.\n- 같은 책은 한 번만 포함합니다.\n- 최대 20권입니다.\n- readingLevel은 본문에 명시된 경우에만 채우고, 없으면 절대 추측하지 말고 빈 문자열로 두세요.\n\n[페이지 제목]\n${sourceTitle}\n\n[본문]\n${text}`,
+          "한국 어린이 도서 큐레이터입니다. 실제로 존재하는 책만 JSON으로 반환합니다. 없는 책을 지어내지 않습니다.",
+        prompt: `${promptHeader}\n\nJSON 객체만 반환하세요. 형식: {"books":[{"title":"책 제목(한국어 정발명이 있으면 한국어 우선)","author":"저자","publisher":"출판사 또는 빈 문자열","reason":"한국어 1문장 추천 이유","readingLevel":"AR/SR/Lexile 지수를 알거나 본문에 있으면 'AR 2.5' 'SR 600L' 'Lexile 700L' 형식, 없으면 빈 문자열"}]}\n\n규칙:\n- 같은 책은 한 번만 포함합니다.\n- 최대 12권입니다.\n- 실제 서점/도서관에서 검색되는 정확한 제목만 사용하세요.\n\n${bodyForPrompt}`,
       });
       const output = BookListSchema.parse(parseJsonObject(result.text));
       const deduped = Array.from(
@@ -293,7 +342,7 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
           };
         }),
       );
-      return { sourceTitle, books: books.filter((b) => b.title) };
+      return { sourceTitle, books: books.filter((b) => b.title), mode };
     } catch (e: any) {
       console.error("[analyzeUrlFn] AI extraction failed:", e);
       if (e?.statusCode === 429 || e?.status === 429) {
@@ -303,7 +352,7 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
         throw new Error("AI 사용량이 모두 소진되었어요. 크레딧을 추가해 주세요.");
       }
       throw new Error(
-        "Gemini가 추천 도서 목록을 정리하지 못했어요. 공개 글 URL인지 확인한 뒤 다시 시도해 주세요.",
+        "추천 도서 목록을 만들지 못했어요. 다른 URL이나 키워드로 다시 시도해 주세요.",
       );
     }
   });
