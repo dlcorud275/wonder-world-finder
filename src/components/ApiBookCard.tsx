@@ -70,7 +70,7 @@ export function ApiBookCard({
         }}
         className={`absolute top-2 right-2 z-10 rounded-full p-1.5 border-2 shadow-sm transition-transform active:scale-90 ${
           saved
-            ? "bg-destructive text-destructive-foreground border-destructive"
+            ? "bg-primary text-primary-foreground border-primary"
             : "bg-card text-muted-foreground border-border"
         }`}
       >

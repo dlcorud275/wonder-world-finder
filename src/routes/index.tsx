@@ -104,7 +104,7 @@ function Index() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-primary text-primary-foreground px-3 py-2 text-sm font-bold disabled:opacity-60 active:scale-95 transition-transform shadow-[0_3px_0_0_var(--color-accent-foreground)]"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-primary text-primary-foreground px-3 py-2 text-sm font-bold disabled:opacity-60 active:scale-95 transition-transform shadow-[0_3px_0_0_var(--color-accent)]"
             >
               {loading ? (
                 <Loader2 className="size-4 animate-spin" />

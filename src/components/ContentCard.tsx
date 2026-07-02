@@ -70,7 +70,7 @@ export function ContentCard({ item }: { item: ContentItem }) {
             {bookmarked ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}
           </button>
         </div>
-        <p className="text-[10px] text-accent-foreground/70 font-medium">{item.ages}</p>
+        <p className="text-[10px] text-muted-foreground font-medium">{item.ages}</p>
       </div>
     </Link>
   );
