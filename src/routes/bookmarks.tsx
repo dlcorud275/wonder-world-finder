@@ -31,7 +31,7 @@ function Bookmarks() {
             </p>
             <Link
               to="/"
-              className="inline-block mt-4 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_3px_0_0_var(--color-accent-foreground)]"
+              className="inline-block mt-4 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_3px_0_0_var(--color-accent)]"
             >
               둘러보기
             </Link>
