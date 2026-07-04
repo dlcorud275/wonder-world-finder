@@ -363,3 +363,105 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
       );
     }
   });
+
+const TitleListSchema = z.object({
+  titles: z.array(z.string().min(1)).max(20),
+});
+
+async function enrichBook(rawTitle: string, rawAuthor = ""): Promise<AnalyzedBook | null> {
+  const title = rawTitle.trim();
+  if (!title) return null;
+  const author = rawAuthor.trim();
+  const enriched = await enrichWithNaverBook(title, author);
+  const finalTitle = enriched.title || title;
+  const finalAuthor = enriched.author || author;
+  const finalIsbn = enriched.isbn ?? "";
+  let imageUrl = enriched.imageUrl ?? "";
+  if (!imageUrl) {
+    const cover = await resolveBookCover(finalTitle, finalAuthor, finalIsbn);
+    imageUrl = cover.imageUrl;
+  }
+  return {
+    title: finalTitle,
+    author: finalAuthor,
+    publisher: enriched.publisher || "",
+    reason: "",
+    isbn: finalIsbn,
+    imageUrl,
+    readingLevel: "",
+  };
+}
+
+export const analyzeImageFn = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => ImageInputSchema.parse(input))
+  .handler(async ({ data }): Promise<AnalyzeResult> => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI 키가 설정되지 않았어요.");
+
+    const gatewayUrl = "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const body = {
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        {
+          role: "system",
+          content:
+            "당신은 책 표지 이미지에서 책 제목을 정확히 읽어내는 도우미입니다. 존재하지 않는 책을 지어내지 마세요. JSON만 반환하세요.",
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                "이 사진에 보이는 책 표지에서 책 제목을 모두 추출하세요. 여러 권이면 각각 나열하세요. 부제/시리즈명이 표지에 함께 있으면 함께 포함하세요. 오직 JSON 객체만 반환: {\"titles\": [\"책 제목1\", \"책 제목2\"]}. 표지에서 제목이 명확히 보이지 않으면 빈 배열을 반환하세요.",
+            },
+            { type: "image_url", image_url: { url: data.image } },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+    };
+
+    let titles: string[] = [];
+    try {
+      const res = await fetch(gatewayUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Lovable-API-Key": apiKey,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (res.status === 429) throw new Error("요청이 너무 많아요. 잠시 후 다시 시도해 주세요.");
+      if (res.status === 402)
+        throw new Error("AI 사용량이 모두 소진되었어요. 크레딧을 추가해 주세요.");
+      if (!res.ok) throw new Error(`vision HTTP ${res.status}`);
+      const json = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const text = json.choices?.[0]?.message?.content ?? "";
+      const parsed = TitleListSchema.parse(parseJsonObject(text));
+      titles = Array.from(
+        new Set(parsed.titles.map((t) => t.trim()).filter(Boolean).map((t) => t)),
+      );
+    } catch (e: any) {
+      console.error("[analyzeImageFn] vision extract failed:", e);
+      if (e?.message?.includes("잠시 후") || e?.message?.includes("크레딧")) throw e;
+      throw new Error("책 표지에서 제목을 읽지 못했어요. 다시 촬영해 주세요.");
+    }
+
+    if (titles.length === 0) {
+      throw new Error("책 제목을 찾지 못했어요. 표지가 잘 보이게 다시 촬영해 주세요.");
+    }
+
+    const books = (await Promise.all(titles.map((t) => enrichBook(t)))).filter(
+      (b): b is AnalyzedBook => !!b && !!b.title,
+    );
+
+    return {
+      sourceTitle: `📷 촬영한 책 ${books.length}권`,
+      books,
+      mode: "query",
+    };
+  });
