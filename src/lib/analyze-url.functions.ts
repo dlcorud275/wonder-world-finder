@@ -5,6 +5,13 @@ import { generateText } from "ai";
 import { resolveBookCover } from "./book-cover.functions";
 
 const RawInputSchema = z.object({ input: z.string().min(1).max(2000) });
+const ImageInputSchema = z.object({
+  image: z
+    .string()
+    .min(20)
+    .max(8_000_000)
+    .refine((s) => s.startsWith("data:image/"), "이미지 데이터 URL이어야 해요."),
+});
 const BookListSchema = z.object({
   books: z
     .array(
