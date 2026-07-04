@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { getChildProfile } from "@/lib/child-profile";
-import { Settings, Loader2, Sparkles, X, Search } from "lucide-react";
+import { Settings, Loader2, Sparkles, X, Search, Camera } from "lucide-react";
 import { ApiBookCard } from "@/components/ApiBookCard";
 import { AdBanner } from "@/components/AdBanner";
-import { analyzeUrlFn, type AnalyzedBook } from "@/lib/analyze-url.functions";
+import { analyzeUrlFn, analyzeImageFn, type AnalyzedBook } from "@/lib/analyze-url.functions";
 import type { PopularBook } from "@/services/libraryApi";
 
 export const Route = createFileRoute("/")({
@@ -24,10 +24,12 @@ interface AnalysisEntry {
 function Index() {
   const profile = getChildProfile();
   const analyzeUrl = useServerFn(analyzeUrlFn);
+  const analyzeImage = useServerFn(analyzeImageFn);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analyses, setAnalyses] = useState<AnalysisEntry[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +56,59 @@ function Index() {
       }
     } catch (err: any) {
       setError(err?.message ?? "분석에 실패했어요.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fileToDataUrl(file: File): Promise<string> {
+    // Downscale large photos to keep payload small (< ~1.5MB base64).
+    const bitmap = await createImageBitmap(file).catch(() => null);
+    if (!bitmap) {
+      return await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
+      });
+    }
+    const maxSide = 1280;
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  }
+
+  async function onCameraChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const result = await analyzeImage({ data: { image: dataUrl } });
+      if (result.books.length === 0) {
+        setError("책 제목을 찾지 못했어요. 다시 촬영해 주세요.");
+      } else {
+        setAnalyses((prev) => [
+          {
+            id: `${Date.now()}`,
+            url: "camera://photo",
+            sourceTitle: result.sourceTitle,
+            books: result.books,
+            createdAt: Date.now(),
+          },
+          ...prev,
+        ]);
+      }
+    } catch (err: any) {
+      setError(err?.message ?? "이미지 분석에 실패했어요.");
     } finally {
       setLoading(false);
     }
@@ -102,6 +157,15 @@ function Index() {
               disabled={loading}
             />
             <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              aria-label="책 표지 촬영"
+              className="inline-flex items-center justify-center rounded-2xl bg-secondary text-foreground border-2 border-border px-3 py-2 disabled:opacity-60 active:scale-95 transition-transform shadow-[0_3px_0_0_var(--color-accent)]"
+            >
+              <Camera className="size-4" />
+            </button>
+            <button
               type="submit"
               disabled={loading || !input.trim()}
               className="inline-flex items-center gap-1.5 rounded-2xl bg-primary text-primary-foreground px-3 py-2 text-sm font-bold disabled:opacity-60 active:scale-95 transition-transform shadow-[0_3px_0_0_var(--color-accent)]"
@@ -114,9 +178,17 @@ function Index() {
               분석
             </button>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={onCameraChange}
+          />
           <p className="text-[11px] text-muted-foreground mt-2">
-            블로그 본문이 없어도 괜찮아요. 책 제목, 저자, 유튜버 이름, 관심 주제만 넣어도 AI가 추천 목록을
-            만들어줘요. 🐣
+            블로그 본문이 없어도 괜찮아요. 책 제목·저자·유튜버 이름·관심 주제만 넣어도 되고,
+            📷 카메라로 책 표지를 찍으면 제목을 읽어 목록을 만들어줘요. 🐣
           </p>
           {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
         </form>
