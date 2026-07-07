@@ -19,6 +19,7 @@ const BookListSchema = z.object({
         title: z.string(),
         author: z.string().optional().default(""),
         publisher: z.string().optional().default(""),
+        summary: z.string().optional().default(""),
         reason: z.string().optional().default(""),
         readingLevel: z.string().optional().default(""),
       }),
@@ -30,6 +31,7 @@ export interface AnalyzedBook {
   title: string;
   author: string;
   publisher: string;
+  summary: string;
   reason: string;
   isbn: string;
   imageUrl: string;
@@ -317,7 +319,7 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
         model: gateway("google/gemini-3-flash-preview"),
         system:
           "한국 어린이 도서 큐레이터입니다. 실제로 존재하는 책만 JSON으로 반환합니다. 없는 책을 지어내지 않습니다.",
-        prompt: `${promptHeader}\n\nJSON 객체만 반환하세요. 형식: {"books":[{"title":"책 제목(한국어 정발명이 있으면 한국어 우선)","author":"저자","publisher":"출판사 또는 빈 문자열","reason":"한국어 1문장 추천 이유","readingLevel":"AR/SR/Lexile 지수를 알거나 본문에 있으면 'AR 2.5' 'SR 600L' 'Lexile 700L' 형식, 없으면 빈 문자열"}]}\n\n규칙:\n- 같은 책은 한 번만 포함합니다.\n- 최대 12권입니다.\n- 실제 서점/도서관에서 검색되는 정확한 제목만 사용하세요.\n\n${bodyForPrompt}`,
+        prompt: `${promptHeader}\n\nJSON 객체만 반환하세요. 형식: {"books":[{"title":"책 제목(한국어 정발명이 있으면 한국어 우선)","author":"저자","publisher":"출판사 또는 빈 문자열","summary":"이 책의 내용을 한국어 1~2문장으로 아주 짧게 요약","reason":"이 아이/독자에게 왜 좋은지 한국어 1문장 추천 이유","readingLevel":"AR/SR/Lexile 지수를 알거나 본문에 있으면 'AR 2.5' 'SR 600L' 'Lexile 700L' 형식, 없으면 빈 문자열"}]}\n\n규칙:\n- 같은 책은 한 번만 포함합니다.\n- 최대 12권입니다.\n- 실제 서점/도서관에서 검색되는 정확한 제목만 사용하세요.\n- summary와 reason은 반드시 서로 다른 내용으로 짧게 작성하세요.\n\n${bodyForPrompt}`,
       });
       const output = BookListSchema.parse(parseJsonObject(result.text));
       const deduped = Array.from(
@@ -342,6 +344,7 @@ export const analyzeUrlFn = createServerFn({ method: "POST" })
             title: finalTitle,
             author: finalAuthor,
             publisher: enriched.publisher || b.publisher?.trim() || "",
+            summary: b.summary?.trim() ?? "",
             reason: b.reason?.trim() ?? "",
             isbn: finalIsbn,
             imageUrl,
@@ -385,6 +388,7 @@ async function enrichBook(rawTitle: string, rawAuthor = ""): Promise<AnalyzedBoo
     title: finalTitle,
     author: finalAuthor,
     publisher: enriched.publisher || "",
+    summary: "",
     reason: "",
     isbn: finalIsbn,
     imageUrl,
