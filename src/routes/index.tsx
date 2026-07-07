@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { getChildProfile } from "@/lib/child-profile";
@@ -21,6 +21,18 @@ interface AnalysisEntry {
   createdAt: number;
 }
 
+const ANALYSES_KEY = "kidsnest.analyses.v1";
+
+function loadAnalyses(): AnalysisEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ANALYSES_KEY);
+    return raw ? (JSON.parse(raw) as AnalysisEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 function Index() {
   const profile = getChildProfile();
   const analyzeUrl = useServerFn(analyzeUrlFn);
@@ -30,6 +42,17 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [analyses, setAnalyses] = useState<AnalysisEntry[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setAnalyses(loadAnalyses());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(ANALYSES_KEY, JSON.stringify(analyses));
+    } catch {}
+  }, [analyses]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
