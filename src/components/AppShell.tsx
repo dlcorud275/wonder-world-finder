@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Bookmark, Library } from "lucide-react";
+import { Home, Heart, Library } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -18,7 +18,7 @@ function BottomNav() {
   const items = [
     { to: "/", label: "홈", icon: Home },
     { to: "/explore", label: "탐색", icon: Library },
-    { to: "/bookmarks", label: "보관함", icon: Bookmark },
+    { to: "/bookmarks", label: "보관함", icon: Heart },
   ] as const;
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] border-t border-border bg-card/95 backdrop-blur z-50">
