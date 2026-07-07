@@ -231,10 +231,19 @@ function Index() {
             {entry.books.map((b, i) => (
               <div key={i} className="space-y-1">
                 <ApiBookCard book={toPopularBook(b)} readingLevel={b.readingLevel} />
-                {b.reason && (
-                  <p className="text-[11px] text-muted-foreground px-3 leading-relaxed">
-                    “{b.reason}”
-                  </p>
+                {(b.summary || b.reason) && (
+                  <div className="px-3 space-y-0.5">
+                    {b.summary && (
+                      <p className="text-[11px] text-foreground/80 leading-relaxed">
+                        📖 {b.summary}
+                      </p>
+                    )}
+                    {b.reason && (
+                      <p className="text-[11px] text-primary/80 leading-relaxed font-medium">
+                        💡 {b.reason}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
