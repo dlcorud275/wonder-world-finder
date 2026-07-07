@@ -41,18 +41,20 @@ function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analyses, setAnalyses] = useState<AnalysisEntry[]>([]);
+  const [storageLoaded, setStorageLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setAnalyses(loadAnalyses());
+    setStorageLoaded(true);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!storageLoaded || typeof window === "undefined") return;
     try {
       localStorage.setItem(ANALYSES_KEY, JSON.stringify(analyses));
     } catch {}
-  }, [analyses]);
+  }, [analyses, storageLoaded]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
